@@ -26,7 +26,7 @@ cdn = [
 
 [left_ticket]
 leftTicketDTO.train_date="2014-01-20"
-leftTicketDTO.from_station="WHN"
-leftTicketDTO.to_station="JCN"
+leftTicketDTO.from_station="WMR"
+leftTicketDTO.to_station="WHN"
 purpose_codes="ADULT"
 

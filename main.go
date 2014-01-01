@@ -98,7 +98,7 @@ func getPassengerDTO() {
 
 	body := DoForWardRequest(Config.System.Cdn[1], "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
 	Debug("body:", body)
-	passenger := new(PassengerDTOs)
+	passenger := new(PassengerDTO)
 
 	if err := json.Unmarshal([]byte(body), &passenger); err != nil {
 		Error(err)
@@ -121,12 +121,12 @@ func queryLeftTicket() {
 	Debug("request url:", leftTicketUrl)
 	body := DoForWardRequest(Config.System.Cdn[2], "GET", leftTicketUrl[:len(leftTicketUrl)-1], nil)
 	Debug("body:", body)
-	//passenger := new(PassengerDTOs)
+	leftTicket := new(QueryLeftNewDTO)
 
-	//if err := json.Unmarshal([]byte(body), &passenger); err != nil {
-	//	Error(err)
-	//} else {
-	//	Debug(passenger.Data.NoLogin)
-	//	Debug(passenger.Data.NormalPassengers[0].PassengerName)
-	//}
+	if err := json.Unmarshal([]byte(body), &leftTicket); err != nil {
+		Error(err)
+	} else {
+		Debug(leftTicket.Data[0].ticket.ArriveTime)
+		Debug(leftTicket.Data[0].secretStr)
+	}
 }

@@ -26,7 +26,7 @@ type passenger struct {
 	FirstLetter         string `json:"first_letter"`
 	RecordCount         string `json:"recordCount"`
 }
-type PassengerDTOs struct {
+type PassengerDTO struct {
 	Basic
 	Data             data4Passenger
 	Messages         []interface{} `json:"messages,omitempty"`
