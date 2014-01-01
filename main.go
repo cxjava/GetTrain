@@ -2,88 +2,90 @@ package main
 
 import (
 	"bufio"
-	//"compress/gzip"
-	//"crypto/tls"
 	"fmt"
-	//"io/ioutil"
+	"io"
 	"net"
 	"net/http"
-	//"net/url"
 	"runtime"
+	"strings"
+	"sync"
 	"time"
 )
 
-func dial(netw, addr string) (net.Conn, error) {
-	fmt.Printf("dial %v %v\n", netw, addr)
-	return net.Dial(netw, addr)
-}
+var (
+	mainChan = make(chan int, 20) //主线程
+	wg       = sync.WaitGroup{}   // 用于等待所有 goroutine 结束
+)
+
 func main() {
-
-	SetLogger("file", `{"filename":"logs.log"}`)
-	SetLevel(0)
-
-	runtime.GOMAXPROCS(1)
-	fmt.Println("1")
-	timeout := 10 * time.Second
-	c, err := net.DialTimeout("tcp", "124.254.47.187:80", timeout)
-	if err != nil {
-		fmt.Println(err)
+	SetLogInfo()
+	if err := ReadConfig(); err != nil {
+		Error(err)
 		return
+	}
+
+	//"https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs"
+	runtime.GOMAXPROCS(1)
+	Info("aaa")
+	fmt.Println("1")
+	wg.Add(1)
+	go DoForWardRequest("113.57.187.29", "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
+	wg.Wait()
+	fmt.Println("1")
+
+}
+
+func DoForWardRequest(forwardAddress, method, requestUrl string, body io.Reader) string {
+	defer func() {
+		<-mainChan
+		wg.Done()
+	}()
+	mainChan <- 1
+
+	if !strings.Contains(forwardAddress, ":") {
+		forwardAddress = forwardAddress + ":80"
+	}
+
+	timeout := 10 * time.Second
+
+	conn, err := net.DialTimeout("tcp", forwardAddress, timeout)
+	if err != nil {
+		Error(err)
+		return ""
 	}
 	//buf_forward_conn *bufio.Reader
-	buf_forward_conn := bufio.NewReader(c)
+	buf_forward_conn := bufio.NewReader(conn)
 
-	//pr, err := url.Parse("113.57.187.29:443")
-	//pr, err := url.Parse("http://127.0.0.1:8087")
+	req, err := http.NewRequest(method, requestUrl, body)
 	if err != nil {
-		fmt.Println(err)
-		return
+		Error(err)
+		return ""
 	}
-	//tr := &http.Transport{
-	//	Proxy:           http.ProxyURL(pr),
-	//	Dial:            dial,
-	//	TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	//}
-	fmt.Println("2")
-	//http.DefaultTransport.(*http.Transport).Dial = dial
-	//client := &http.Client{Transport: tr}
-	fmt.Println("3")
-
-	req, err := http.NewRequest("POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	//add header
 	AddReqestHeader(req)
-	var erra error
-	erra = req.Write(c)
-	if erra != nil {
-		fmt.Println(erra)
-		return
-	}
 
+	var errWrite error
+
+	errWrite = req.Write(conn)
+	if errWrite != nil {
+		Error(errWrite)
+		return ""
+	}
+	defer conn.Close()
 	resp, err := http.ReadResponse(buf_forward_conn, req)
 
-	//resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	//resp, err := client.Get("https://113.57.187.29/otn/")
-	//resp, err := client.Get("https://golang.org/doc/")
-	//resp, err := client.Get("https://74.125.128.141/doc/")
-	if err != nil {
-		fmt.Println(err)
-		return
+		Error(err)
+		return ""
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode == http.StatusOK {
-		html := ParseResponseBody(resp)
-		fmt.Println("response body:", html)
-		fmt.Println("dd")
+		body := ParseResponseBody(resp)
+		Debug("response body:", body)
+		return body
 	} else {
-		fmt.Println("StatusCode:", resp.StatusCode)
-		fmt.Println("ee")
+		Error("StatusCode:", resp.StatusCode)
 	}
-	fmt.Println("aaa")
+	return ""
 }
