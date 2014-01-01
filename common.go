@@ -18,10 +18,13 @@ var Config config
 func AddReqestHeader(request *http.Request) {
 	request.Header.Set("Host", "kyfw.12306.cn")
 	request.Header.Set("Connection", "keep-alive")
-	request.Header.Set("Content-Length", "0")
+	request.Header.Set("Cache-Control", "no-cache")
 	request.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 	request.Header.Set("Origin", "https://kyfw.12306.cn")
 	request.Header.Set("X-Requested-With", "XMLHttpRequest")
+
+	request.Header.Set("If-Modified-Since", "0")
+
 	request.Header.Set("User-Agent", Config.Login.UserAgent)
 
 	request.Header.Set("Referer", "https://kyfw.12306.cn/otn/leftTicket/init")

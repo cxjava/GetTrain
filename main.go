@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"runtime"
@@ -29,27 +30,15 @@ func main() {
 	//"https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs"
 	runtime.GOMAXPROCS(1)
 	wg.Add(1)
-	go func() {
-		defer func() {
-			<-mainChan
-			wg.Done()
-		}()
-		mainChan <- 1
-		body := DoForWardRequest("113.57.187.29", "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
-		Debug("body:", body)
-		passenger := new(PassengerDTOs)
-
-		if err := json.Unmarshal([]byte(body), &passenger); err != nil {
-			Error(err)
-		} else {
-			Debug(passenger.Data.NoLogin)
-			//Debug(passenger.Data.NormalPassengers[0].PassengerName)
-		}
-	}()
+	wg.Add(1)
+	go getPassengerDTO()
+	go queryLeftTicket()
+	Info("waiting!")
 	wg.Wait()
-
+	log.Println("finished!")
 }
 
+//转发
 func DoForWardRequest(forwardAddress, method, requestUrl string, body io.Reader) string {
 	if !strings.Contains(forwardAddress, ":") {
 		forwardAddress = forwardAddress + ":80"
@@ -97,4 +86,47 @@ func DoForWardRequest(forwardAddress, method, requestUrl string, body io.Reader)
 		Error("StatusCode:", resp.StatusCode)
 	}
 	return ""
+}
+
+//获取联系人
+func getPassengerDTO() {
+	defer func() {
+		<-mainChan
+		wg.Done()
+	}()
+	mainChan <- 1
+
+	body := DoForWardRequest(Config.System.Cdn[1], "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
+	Debug("body:", body)
+	passenger := new(PassengerDTOs)
+
+	if err := json.Unmarshal([]byte(body), &passenger); err != nil {
+		Error(err)
+	} else {
+		Debug(passenger.Data.NoLogin)
+		Debug(passenger.Data.NormalPassengers[0].PassengerName)
+	}
+}
+
+func queryLeftTicket() {
+	defer func() {
+		<-mainChan
+		wg.Done()
+	}()
+	mainChan <- 1
+	leftTicketUrl := "https://kyfw.12306.cn/otn/leftTicket/query?"
+	for k, v := range Config.LeftTicket {
+		leftTicketUrl += k + "=" + v + "&"
+	}
+	Debug("request url:", leftTicketUrl)
+	body := DoForWardRequest(Config.System.Cdn[2], "GET", leftTicketUrl[:len(leftTicketUrl)-1], nil)
+	Debug("body:", body)
+	//passenger := new(PassengerDTOs)
+
+	//if err := json.Unmarshal([]byte(body), &passenger); err != nil {
+	//	Error(err)
+	//} else {
+	//	Debug(passenger.Data.NoLogin)
+	//	Debug(passenger.Data.NormalPassengers[0].PassengerName)
+	//}
 }
