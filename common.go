@@ -12,6 +12,9 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+var Config config
+
+//添加头
 func AddReqestHeader(request *http.Request) {
 	request.Header.Set("Host", "kyfw.12306.cn")
 	request.Header.Set("Connection", "keep-alive")
@@ -19,14 +22,15 @@ func AddReqestHeader(request *http.Request) {
 	request.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 	request.Header.Set("Origin", "https://kyfw.12306.cn")
 	request.Header.Set("X-Requested-With", "XMLHttpRequest")
-	request.Header.Set("User-Agent", "")
+	request.Header.Set("User-Agent", Config.Login.UserAgent)
 
 	request.Header.Set("Referer", "https://kyfw.12306.cn/otn/leftTicket/init")
 	request.Header.Set("Accept-Encoding", "gzip,deflate,sdch")
 	request.Header.Set("Accept-Language", "zh-CN,zh;q=0.8")
-	request.Header.Set("Cookie", "")
+	request.Header.Set("Cookie", Config.Login.Cookie)
 }
 
+//读取响应
 func ParseResponseBody(resp *http.Response) string {
 	var body []byte
 	switch resp.Header.Get("Content-Encoding") {
@@ -61,6 +65,9 @@ func ReadConfig() error {
 		return err
 	}
 	Debug(Config.System.Cdn)
+	for k, v := range Config.LeftTicket {
+		Debug(k, " = ", v)
+	}
 	return nil
 }
 

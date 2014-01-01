@@ -1,7 +1,7 @@
 # This is a TOML document. Boom.
 
 [login]
-cookie="JSESSIONID=5119B99B45C4C8BF0313851DD9991DEA; BIGipServerotn=2647916810.38945.0000; _jc_save_fromStation=%u4E4C%u9C81%u6728%u9F50%2CWMR; _jc_save_toStation=%u5E93%u5C14%u52D2%2CKLR; _jc_save_fromDate=2014-01-01; _jc_save_toDate=2014-01-01; _jc_save_wfdc_flag=dc; BIGipServeropn=1909719306.64545.0000; BIGipServerportal=3067347210.16671.0000"
+cookie="JSESSIONID=54943A6459AD42CC68403B844B449934; BIGipServerotn=2647916810.38945.0000; BIGipServeropn=1909719306.64545.0000; BIGipServerportal=3067347210.16671.0000; _jc_save_fromStation=%u4E4C%u9C81%u6728%u9F50%2CWMR; _jc_save_toStation=%u5E93%u5C14%u52D2%2CKLR; _jc_save_fromDate=2014-01-01; _jc_save_toDate=2014-01-01; _jc_save_wfdc_flag=dc"
 user_agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36"
 
 [query]
@@ -22,3 +22,10 @@ cdn = [
 "113.57.187.29",
 "124.254.47.187"
 ]
+
+[left_ticket]
+leftTicketDTO.train_date="2014-01-20"
+leftTicketDTO.from_station="WHN"
+leftTicketDTO.to_station="JCN"
+purpose_codes="ADULT"
+

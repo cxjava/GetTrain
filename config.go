@@ -1,12 +1,11 @@
 package main
 
-var Config config
-
 type config struct {
-	Login  login
-	Query  query
-	Submit submit
-	System system
+	Login      login
+	Query      query
+	Submit     submit
+	System     system
+	LeftTicket map[string]string `toml:"left_ticket"`
 }
 
 type login struct {

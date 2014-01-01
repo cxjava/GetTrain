@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"encoding/json"
 	"io"
 	"net"
 	"net/http"
@@ -18,7 +18,9 @@ var (
 )
 
 func main() {
+	//日志
 	SetLogInfo()
+	//读取配置文件
 	if err := ReadConfig(); err != nil {
 		Error(err)
 		return
@@ -26,22 +28,29 @@ func main() {
 
 	//"https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs"
 	runtime.GOMAXPROCS(1)
-	Info("aaa")
-	fmt.Println("1")
 	wg.Add(1)
-	go DoForWardRequest("113.57.187.29", "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
+	go func() {
+		defer func() {
+			<-mainChan
+			wg.Done()
+		}()
+		mainChan <- 1
+		body := DoForWardRequest("113.57.187.29", "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
+		Debug("body:", body)
+		passenger := new(PassengerDTOs)
+
+		if err := json.Unmarshal([]byte(body), &passenger); err != nil {
+			Error(err)
+		} else {
+			Debug(passenger.Data.NoLogin)
+			//Debug(passenger.Data.NormalPassengers[0].PassengerName)
+		}
+	}()
 	wg.Wait()
-	fmt.Println("1")
 
 }
 
 func DoForWardRequest(forwardAddress, method, requestUrl string, body io.Reader) string {
-	defer func() {
-		<-mainChan
-		wg.Done()
-	}()
-	mainChan <- 1
-
 	if !strings.Contains(forwardAddress, ":") {
 		forwardAddress = forwardAddress + ":80"
 	}
