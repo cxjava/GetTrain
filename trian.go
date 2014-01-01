@@ -8,9 +8,9 @@ type QueryLeftNewDTO struct {
 }
 
 type leftTicket struct {
-	ticket         ticket `json:"queryLeftNewDTO"`
-	secretStr      string `json:"secretStr"`
-	buttonTextInfo string `json:"buttonTextInfo,omitempty"`
+	Ticket         ticket `json:"queryLeftNewDTO"`
+	SecretStr      string `json:"secretStr"`
+	ButtonTextInfo string `json:"buttonTextInfo"`
 }
 
 type ticket struct {

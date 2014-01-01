@@ -103,8 +103,7 @@ func getPassengerDTO() {
 	if err := json.Unmarshal([]byte(body), &passenger); err != nil {
 		Error(err)
 	} else {
-		Debug(passenger.Data.NoLogin)
-		Debug(passenger.Data.NormalPassengers[0].PassengerName)
+		Debug(passenger.Data.NormalPassengers[0])
 	}
 }
 
@@ -114,6 +113,7 @@ func queryLeftTicket() {
 		wg.Done()
 	}()
 	mainChan <- 1
+
 	leftTicketUrl := "https://kyfw.12306.cn/otn/leftTicket/query?"
 	for k, v := range Config.LeftTicket {
 		leftTicketUrl += k + "=" + v + "&"
@@ -126,7 +126,8 @@ func queryLeftTicket() {
 	if err := json.Unmarshal([]byte(body), &leftTicket); err != nil {
 		Error(err)
 	} else {
-		Debug(leftTicket.Data[0].ticket.ArriveTime)
-		Debug(leftTicket.Data[0].secretStr)
+		Debug(leftTicket.HttpStatus)
+		Debug(len(leftTicket.Data))
+		Debug(leftTicket.Data)
 	}
 }
