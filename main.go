@@ -30,7 +30,7 @@ func main() {
 	//"https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs"
 	runtime.GOMAXPROCS(1)
 	wg.Add(1)
-	wg.Add(1)
+	// wg.Add(1)
 	go getPassengerDTO()
 	go queryLeftTicket()
 	Info("waiting!")
@@ -88,26 +88,41 @@ func DoForWardRequest(forwardAddress, method, requestUrl string, body io.Reader)
 	return ""
 }
 
-//获取联系人
-func getPassengerDTO() {
+//提交订单
+func submitOrderRequest(v url.Values{}) {
 	defer func() {
 		<-mainChan
 		wg.Done()
 	}()
 	mainChan <- 1
 
-	body := DoForWardRequest(Config.System.Cdn[1], "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
+	body := DoForWardRequest(Config.System.Cdn[0], "POST", "https://kyfw.12306.cn/otn/confirmPassenger/autoSubmitOrderRequest", strings.NewReader(v.Encode()))
 	Debug("body:", body)
-	passenger := new(PassengerDTO)
 
-	if err := json.Unmarshal([]byte(body), &passenger); err != nil {
-		Error(err)
-	} else {
-		Debug(passenger.Data.NormalPassengers[0])
-	}
 }
 
-func queryLeftTicket() {
+//order
+func Order() {
+
+	if tickets := queryLeftTicket(); tickets != nil {
+		for _, d := range tickets.Data {
+			if d.Ticket.StationTrainCode == Config.Submit.TrainCode && d.Ticket.YingWoNum != "*" && d.Ticket.YingWoNum != "--" && d.Ticket.YingWoNum != "无" {
+				Debug(d)
+				urlValues := url.Values{}
+				for k, v := range Config.OrderRequest {
+					urlValues.Add(k, v)
+				}
+				urlValues.Add("secretStr", d.SecretStr)
+			}
+		}
+	} else {
+		Error("余票查询错误")
+	}
+
+}
+
+//查询余票
+func queryLeftTicket() QueryLeftNewDTO {
 	defer func() {
 		<-mainChan
 		wg.Done()
@@ -125,9 +140,30 @@ func queryLeftTicket() {
 
 	if err := json.Unmarshal([]byte(body), &leftTicket); err != nil {
 		Error(err)
+		return nil
 	} else {
-		Debug(leftTicket.HttpStatus)
-		Debug(len(leftTicket.Data))
-		Debug(leftTicket.Data)
+		// Debug(leftTicket.HttpStatus)
+		// Debug(len(leftTicket.Data))
+		// Debug(leftTicket.Data)
+		return leftTicket
+	}
+}
+
+//获取联系人
+func getPassengerDTO() {
+	defer func() {
+		<-mainChan
+		wg.Done()
+	}()
+	mainChan <- 1
+
+	body := DoForWardRequest(Config.System.Cdn[1], "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
+	Debug("body:", body)
+	passenger := new(PassengerDTO)
+
+	if err := json.Unmarshal([]byte(body), &passenger); err != nil {
+		Error(err)
+	} else {
+		// Debug(passenger.Data.NormalPassengers[0])
 	}
 }

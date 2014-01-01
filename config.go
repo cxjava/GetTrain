@@ -1,11 +1,12 @@
 package main
 
 type config struct {
-	Login      login
-	Query      query
-	Submit     submit
-	System     system
-	LeftTicket map[string]string `toml:"left_ticket"`
+	Login        login
+	Query        query
+	Submit       submit
+	System       system
+	LeftTicket   map[string]string `toml:"left_ticket"`
+	OrderRequest map[string]string `toml:"order_request"`
 }
 
 type login struct {
@@ -21,6 +22,7 @@ type query struct {
 }
 
 type submit struct {
+	TrainCode          string `toml:"train_code"`
 	PassengerTicketStr string `toml:"passenger_ticket_str"`
 	OldPassengerStr    string `toml:"old_passenger_str"`
 }
