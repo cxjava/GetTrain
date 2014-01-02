@@ -32,6 +32,8 @@ proxy_url= "http://127.0.0.1:9087"
 log_level=2
 #刷新时间毫秒
 refresh_time=7100
+#订单提交队列
+order_size=1
 
 cdn = [
 "119.36.195.228",

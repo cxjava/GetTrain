@@ -30,7 +30,9 @@ func main() {
 		log.Println(err)
 		return
 	}
-
+	if Config.System.OrderSize > 1 {
+		mainChannel = make(chan int, Config.System.OrderSize) // 主线程
+	}
 	//runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 	go getPassengerDTO(Config.System.Cdn[0])
 	//见配置
@@ -38,9 +40,8 @@ func main() {
 	for {
 		select {
 		case <-timer.C:
-			Info("v 查询余票")
+			Info("查询余票")
 			for _, v := range Config.System.Cdn {
-
 				go Order(v)
 			}
 
