@@ -231,7 +231,7 @@ func Order(cdn string) {
 			}
 		}
 	} else {
-		Error("余票查询错误")
+		Error("余票查询错误", tickets)
 	}
 
 }
@@ -252,6 +252,7 @@ func queryLeftTicket(cdn string) *QueryLeftNewDTO {
 
 	if err := json.Unmarshal([]byte(body), &leftTicket); err != nil {
 		Error(err)
+		Error(body)
 		return nil
 	} else {
 		// Debug(leftTicket.HttpStatus)

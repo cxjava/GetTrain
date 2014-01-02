@@ -6,10 +6,10 @@ user_agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like 
 
 
 [order_info]
-train_code="K1022"
-train_date="2014-01-20"
-from_station="CQW"
-to_station="WHN"
+train_code="T250"
+train_date="2014-01-21"
+from_station="WHN"
+to_station="CQW"
 passenger_name=[
   "testa",
   "testb",
