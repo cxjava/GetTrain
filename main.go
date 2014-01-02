@@ -188,7 +188,7 @@ func Order(cdn string) {
 		for _, d := range tickets.Data {
 			if d.Ticket.StationTrainCode == Config.OrderInfo.TrainCode && d.Ticket.YingWoNum != "*" && d.Ticket.YingWoNum != "--" && d.Ticket.YingWoNum != "无" {
 				Debug(d)
-				Info("硬卧:", d.Ticket.YingWoNum, "软卧:", d.Ticket.RuanWoNum, "硬座:", d.Ticket.YingZuoNum)
+				Info(d.Ticket.StationTrainCode, "硬卧:", d.Ticket.YingWoNum, "软卧:", d.Ticket.RuanWoNum, "硬座:", d.Ticket.YingZuoNum)
 				urlValues := url.Values{}
 				for k, v := range Config.OrderRequest {
 					urlValues.Add(k, v)
