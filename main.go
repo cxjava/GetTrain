@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
@@ -32,13 +33,14 @@ func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 	go getPassengerDTO(Config.System.Cdn[0])
-	//5秒钟
-	timer := time.NewTicker(5 * time.Second)
+	//见配置
+	timer := time.NewTicker(time.Duration(Config.System.RefreshTime) * time.Millisecond)
 	for {
 		select {
 		case <-timer.C:
+			Info("v 查询余票")
 			for _, v := range Config.System.Cdn {
-				Info("v 查询余票")
+
 				go Order(v)
 			}
 
@@ -208,26 +210,31 @@ func getPassCodeNew(cdn string) {
 }
 
 func Order(cdn string) {
+
+	time.Sleep(time.Millisecond * time.Duration(rand.Int31n(2000)))
+
 	queryJs(cdn)
 
 	if tickets := queryLeftTicket(cdn); tickets != nil {
 		for _, d := range tickets.Data {
-			if d.Ticket.StationTrainCode == Config.OrderInfo.TrainCode && d.Ticket.YingWoNum != "*" && d.Ticket.YingWoNum != "--" && d.Ticket.YingWoNum != "无" {
-				Debug(d)
-				Info(d.Ticket.StationTrainCode, "硬卧:", d.Ticket.YingWoNum, "软卧:", d.Ticket.RuanWoNum, "硬座:", d.Ticket.YingZuoNum)
-				urlValues := url.Values{}
-				for k, v := range Config.OrderRequest {
-					urlValues.Add(k, v)
+			for _, trainCode := range Config.OrderInfo.TrainCode {
+				if d.Ticket.StationTrainCode == trainCode && d.Ticket.YingWoNum != "*" && d.Ticket.YingWoNum != "--" && d.Ticket.YingWoNum != "无" {
+					Debug(d)
+					Info("开始订票:", d.Ticket.StationTrainCode, "硬卧:", d.Ticket.YingWoNum)
+					urlValues := url.Values{}
+					for k, v := range Config.OrderRequest {
+						urlValues.Add(k, v)
+					}
+					urlValues.Add("secretStr", d.SecretStr)
+					urlValues.Add("train_date", Config.OrderInfo.TrainDate)
+					urlValues.Add("query_from_station_name", d.Ticket.FromStationName)
+					urlValues.Add("query_to_station_name", d.Ticket.ToStationName)
+					urlValues.Add("passengerTicketStr", passengerTicketStr)
+					urlValues.Add("oldPassengerStr", oldPassengerStr)
+					go submitOrderRequest(urlValues, cdn, d.Ticket)
+				} else {
+					Info(d.Ticket.StationTrainCode, "硬卧:", d.Ticket.YingWoNum, "软卧:", d.Ticket.RuanWoNum, "硬座:", d.Ticket.YingZuoNum)
 				}
-				urlValues.Add("secretStr", d.SecretStr)
-				urlValues.Add("train_date", Config.OrderInfo.TrainDate)
-				urlValues.Add("query_from_station_name", d.Ticket.FromStationName)
-				urlValues.Add("query_to_station_name", d.Ticket.ToStationName)
-				urlValues.Add("passengerTicketStr", passengerTicketStr)
-				urlValues.Add("oldPassengerStr", oldPassengerStr)
-				go submitOrderRequest(urlValues, cdn, d.Ticket)
-			} else {
-				Info(d.Ticket.StationTrainCode, "硬卧:", d.Ticket.YingWoNum, "软卧:", d.Ticket.RuanWoNum, "硬座:", d.Ticket.YingZuoNum)
 			}
 		}
 	} else {

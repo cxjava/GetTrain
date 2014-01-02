@@ -15,7 +15,7 @@ type login struct {
 }
 
 type orderInfo struct {
-	TrainCode     string   `toml:"train_code"`
+	TrainCode     []string `toml:"train_code"`
 	TrainDate     string   `toml:"train_date"`
 	FromStation   string   `toml:"from_station"`
 	ToStation     string   `toml:"to_station"`
@@ -24,7 +24,9 @@ type orderInfo struct {
 }
 
 type system struct {
-	Proxy    bool
-	ProxyUrl string `toml:"proxy_url"`
-	Cdn      []string
+	Proxy       bool
+	ProxyUrl    string `toml:"proxy_url"`
+	LogLevel    int    `toml:"log_level"`
+	RefreshTime int64  `toml:"refresh_time"`
+	Cdn         []string
 }
