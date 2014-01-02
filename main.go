@@ -316,8 +316,13 @@ func ParsePassager() {
 }
 
 func sendMessage(infos string) {
-
 	Info(infos)
+
+	defer func() {
+		cmd := exec.Command(Config.System.Open, Config.System.OpenParams)
+		cmd.Start()
+		os.Exit(2)
+	}()
 
 	if len(Config.System.Mobile) > 0 {
 		client := &http.Client{}
@@ -338,7 +343,4 @@ func sendMessage(infos string) {
 		}
 		defer response.Body.Close()
 	}
-	cmd := exec.Command(Config.System.Open, Config.System.OpenParams)
-	cmd.Start()
-	os.Exit(2)
 }
