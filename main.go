@@ -18,6 +18,7 @@ var (
 	passengerDTO       PassengerDTO
 	passengerTicketStr string
 	oldPassengerStr    string
+	mainChannel        = make(chan int, 1) // 主线程
 )
 
 func main() {
@@ -128,6 +129,7 @@ func getQueueCount(v url.Values, values []string, cdn string) {
 	urlValuesForQueue.Add("leftTicketStr", values[2])
 	urlValuesForQueue.Add("passengerTicketStr", passengerTicketStr)
 	urlValuesForQueue.Add("oldPassengerStr", oldPassengerStr)
+	// time.Sleep(time.Second * 1)
 	confirmSingleForQueue(urlValuesForQueue, cdn)
 }
 
@@ -145,6 +147,10 @@ func confirmSingleForQueue(v url.Values, cdn string) {
 
 //提交订单
 func submitOrderRequest(v url.Values, cdn string, t ticket) {
+	defer func() {
+		<-mainChannel
+	}()
+	mainChannel <- 1
 	params, _ := url.QueryUnescape(v.Encode())
 	Debug(params)
 	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/autoSubmitOrderRequest", strings.NewReader(params))
@@ -180,7 +186,6 @@ func submitOrderRequest(v url.Values, cdn string, t ticket) {
 	} else if strings.Contains(body, `"用户未登录`) {
 		log.Println(body)
 		log.Println("用户未登录！！！！！")
-		os.Exit(1)
 	} else if strings.Contains(body, `"由于您取消次数过多`) {
 		log.Println(body)
 		log.Println("由于您取消次数过多！！！！！")
@@ -220,7 +225,7 @@ func Order(cdn string) {
 				urlValues.Add("query_to_station_name", d.Ticket.ToStationName)
 				urlValues.Add("passengerTicketStr", passengerTicketStr)
 				urlValues.Add("oldPassengerStr", oldPassengerStr)
-				submitOrderRequest(urlValues, cdn, d.Ticket)
+				go submitOrderRequest(urlValues, cdn, d.Ticket)
 			} else {
 				Info(d.Ticket.StationTrainCode, "硬卧:", d.Ticket.YingWoNum, "软卧:", d.Ticket.RuanWoNum, "硬座:", d.Ticket.YingZuoNum)
 			}

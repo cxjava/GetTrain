@@ -1,21 +1,21 @@
 # This is a TOML document. Boom.
 
 [login]
-cookie="JSESSIONID=D619BAA063981BFA978749482F400070; BIGipServerotn=1507393802.24610.0000; BIGipServerportal=2949906698.17183.0000; _jc_save_fromStation=%u6B66%u6C49%2CWHN; _jc_save_toStation=%u4EAC%u5C71%2CJCN; _jc_save_fromDate=2014-01-20; _jc_save_toDate=2014-01-02; _jc_save_wfdc_flag=dc"
+cookie="JSESSIONID=FB423166164A338B9D35D9BF98E67E92; BIGipServerotn=1507393802.24610.0000; BIGipServerportal=2949906698.17183.0000; _jc_save_fromStation=%u6B66%u6C49%2CWHN; _jc_save_toStation=%u91CD%u5E86%2CCQW; _jc_save_fromDate=2014-01-21; _jc_save_toDate=2014-01-02; _jc_save_wfdc_flag=dc"
 user_agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36"
 
 
 [order_info]
-train_code="K8084"
+train_code="K1022"
 train_date="2014-01-20"
-from_station="WHN"
-to_station="JCN"
+from_station="CQW"
+to_station="WHN"
 passenger_name=[
-  "刘俊俊",
-  "刘显忠",
-  "刘鹏",
-  "岳玉舜",
-  "徐子和"
+  "testa",
+  "testb",
+  "testc",
+  "testd",
+  "cxjavad"
 ]
 #硬卧3 硬座
 seat_type = "3"
@@ -27,24 +27,27 @@ proxy_url= "http://127.0.0.1:9087"
 
 cdn = [
 "119.36.195.228",
-"101.44.11.4",
-"122.70.142.160",
 "220.113.9.116",
-"101.44.11.8",
-"124.14.10.18",
-"124.14.10.24",
-"101.44.11.7",
 "220.113.9.114",
-"124.14.10.17",
-"219.243.47.166",
-"124.254.47.194",
 "219.243.47.167",
-"101.44.11.9",
-"101.44.11.6",
 "220.113.9.115",
-"112.65.220.39",
+"123.125.92.28",
+"202.204.80.76",
+"123.125.92.14",
+"219.243.47.166",
 "221.130.17.40",
-"221.130.17.42"
+"162.105.28.233",
+"112.25.35.62",
+"221.130.17.42",
+"110.18.244.166",
+"124.14.10.18",
+"124.254.47.194",
+"122.70.142.160",
+"124.14.10.24",
+"221.238.252.180",
+"113.229.252.37",
+"202.102.254.189",
+"211.162.127.77"
 ]
 
 
