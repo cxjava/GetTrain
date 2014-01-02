@@ -25,6 +25,8 @@ type orderInfo struct {
 
 type system struct {
 	Proxy       bool
+	OpenParams  string `toml:"open_params"`
+	Open        string `toml:"open"`
 	ProxyUrl    string `toml:"proxy_url"`
 	LogLevel    int    `toml:"log_level"`
 	OrderSize   int    `toml:"order_size"`

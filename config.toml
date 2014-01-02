@@ -33,7 +33,11 @@ log_level=2
 #刷新时间毫秒
 refresh_time=7100
 #订单提交队列
-order_size=1
+order_size=2
+#打开的东西
+#open="C:/Program Files/Internet Explorer/iexplore.exe"
+open ="explorer"
+open_params ="https://kyfw.12306.cn/otn/"
 
 cdn = [
 "119.36.195.228",
@@ -43,7 +47,6 @@ cdn = [
 "220.113.9.115",
 "123.125.92.28",
 "202.204.80.76",
-"123.125.92.14",
 "219.243.47.166",
 "221.130.17.40",
 "162.105.28.233",

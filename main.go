@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	// "runtime"
+	"os/exec"
 	"strings"
 	"time"
 )
@@ -33,6 +33,10 @@ func main() {
 	if Config.System.OrderSize > 1 {
 		mainChannel = make(chan int, Config.System.OrderSize) // 主线程
 	}
+	cmd := exec.Command(Config.System.Open, Config.System.OpenParams)
+	// cmd := exec.Command(Config.System.Open)
+	cmd.Start()
+	os.Exit(2)
 	//runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 	go getPassengerDTO(Config.System.Cdn[0])
 	//见配置
@@ -156,6 +160,7 @@ func submitOrderRequest(v url.Values, cdn string, t ticket) {
 	mainChannel <- 1
 	params, _ := url.QueryUnescape(v.Encode())
 	Debug(params)
+
 	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/autoSubmitOrderRequest", strings.NewReader(params))
 	Debug("body:", body)
 	if strings.Contains(body, `"submitStatus":true`) {
@@ -182,19 +187,26 @@ func submitOrderRequest(v url.Values, cdn string, t ticket) {
 			urlValues.Add("toStationTelecode", t.ToStationTelecode)
 			getQueueCount(urlValues, v, cdn)
 		}
-	} else if strings.Contains(body, `"您还有未处理的订单`) {
+	} else if strings.Contains(body, `您还有未处理的订单`) {
 		log.Println(body)
 		log.Println("订票成功！！！！！")
-		os.Exit(1)
-	} else if strings.Contains(body, `"用户未登录`) {
+		cmd := exec.Command(Config.System.Open, Config.System.OpenParams)
+		cmd.Start()
+		os.Exit(2)
+	} else if strings.Contains(body, `用户未登录`) {
 		log.Println(body)
 		log.Println("用户未登录！！！！！")
-	} else if strings.Contains(body, `"由于您取消次数过多`) {
+		cmd := exec.Command(Config.System.Open, Config.System.OpenParams)
+		cmd.Start()
+		os.Exit(2)
+	} else if strings.Contains(body, `取消次数过多`) {
 		log.Println(body)
 		log.Println("由于您取消次数过多！！！！！")
+		cmd := exec.Command(Config.System.Open, Config.System.OpenParams)
+		cmd.Start()
 		os.Exit(1)
 	} else {
-		Warn("订票请求警告:", body)
+		Warn(cdn, "订票请求警告:", body)
 	}
 }
 
@@ -239,7 +251,7 @@ func Order(cdn string) {
 			}
 		}
 	} else {
-		Error("余票查询错误", tickets)
+		Error(cdn, "余票查询错误", tickets)
 	}
 
 }
@@ -259,8 +271,8 @@ func queryLeftTicket(cdn string) *QueryLeftNewDTO {
 	leftTicket := new(QueryLeftNewDTO)
 
 	if err := json.Unmarshal([]byte(body), &leftTicket); err != nil {
-		Error(err)
-		Error(body)
+		Error(cdn, err)
+		Error(cdn, body)
 		return nil
 	} else {
 		// Debug(leftTicket.HttpStatus)
@@ -277,11 +289,11 @@ func getPassengerDTO(cdn string) {
 	Debug("body:", body)
 
 	if err := json.Unmarshal([]byte(body), &passengerDTO); err != nil {
-		Error(err)
+		Error(cdn, err)
 		return
 	} else {
 		Debug(passengerDTO.Data.NormalPassengers[0])
-		Info("success!")
+		Info(cdn, "success!")
 		ParsePassager()
 	}
 }
