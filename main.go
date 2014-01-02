@@ -31,7 +31,7 @@ func main() {
 		return
 	}
 
-	runtime.GOMAXPROCS(runtime.NumCPU() - 1)
+	//runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 	go getPassengerDTO(Config.System.Cdn[0])
 	//见配置
 	timer := time.NewTicker(time.Duration(Config.System.RefreshTime) * time.Millisecond)
