@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"runtime"
 	"strings"
 	"time"
@@ -172,8 +173,20 @@ func submitOrderRequest(v url.Values, cdn string, t ticket) {
 			urlValues.Add("toStationTelecode", t.ToStationTelecode)
 			getQueueCount(urlValues, v, cdn)
 		}
+	} else if strings.Contains(body, `"您还有未处理的订单`) {
+		log.Println(body)
+		log.Println("订票成功！！！！！")
+		os.Exit(1)
+	} else if strings.Contains(body, `"用户未登录`) {
+		log.Println(body)
+		log.Println("用户未登录！！！！！")
+		os.Exit(1)
+	} else if strings.Contains(body, `"由于您取消次数过多`) {
+		log.Println(body)
+		log.Println("由于您取消次数过多！！！！！")
+		os.Exit(1)
 	} else {
-		Warn("提交订单警告:", body)
+		Warn("订票请求警告:", body)
 	}
 }
 
