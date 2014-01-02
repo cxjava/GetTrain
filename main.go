@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"runtime"
+	// "runtime"
 	"strings"
 	"time"
 )
@@ -233,7 +233,7 @@ func Order(cdn string) {
 					urlValues.Add("oldPassengerStr", oldPassengerStr)
 					go submitOrderRequest(urlValues, cdn, d.Ticket)
 				} else {
-					Info(d.Ticket.StationTrainCode, "硬卧:", d.Ticket.YingWoNum, "软卧:", d.Ticket.RuanWoNum, "硬座:", d.Ticket.YingZuoNum)
+					Debug(d.Ticket.StationTrainCode, "硬卧:", d.Ticket.YingWoNum, "软卧:", d.Ticket.RuanWoNum, "硬座:", d.Ticket.YingZuoNum)
 				}
 			}
 		}
