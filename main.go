@@ -33,10 +33,6 @@ func main() {
 	if Config.System.OrderSize > 1 {
 		mainChannel = make(chan int, Config.System.OrderSize) // 主线程
 	}
-	cmd := exec.Command(Config.System.Open, Config.System.OpenParams)
-	// cmd := exec.Command(Config.System.Open)
-	cmd.Start()
-	os.Exit(2)
 	//runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 	go getPassengerDTO(Config.System.Cdn[0])
 	//见配置
