@@ -4,9 +4,9 @@ import (
 	//"bufio"
 	"compress/gzip"
 	//"io"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-	//"os"
 	//"strings"
 
 	"github.com/BurntSushi/toml"
@@ -15,17 +15,18 @@ import (
 var Config config
 
 //添加头
-func AddReqestHeader(request *http.Request) {
+func AddReqestHeader(request *http.Request, method string) {
 	request.Header.Set("Host", "kyfw.12306.cn")
 	request.Header.Set("Connection", "keep-alive")
-	request.Header.Set("Cache-Control", "no-cache")
-	request.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	request.Header.Set("Accept", "*/*")
 	request.Header.Set("Origin", "https://kyfw.12306.cn")
 	request.Header.Set("X-Requested-With", "XMLHttpRequest")
-
-	request.Header.Set("If-Modified-Since", "0")
-
+	request.Header.Set("Content-Length", fmt.Sprintf("%d", request.ContentLength))
 	request.Header.Set("User-Agent", Config.Login.UserAgent)
+
+	if method == "POST" {
+		request.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+	}
 
 	request.Header.Set("Referer", "https://kyfw.12306.cn/otn/leftTicket/init")
 	request.Header.Set("Accept-Encoding", "gzip,deflate,sdch")

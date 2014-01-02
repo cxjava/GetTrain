@@ -31,7 +31,7 @@ func main() {
 		case <-timer.C:
 
 			for _, v := range Config.System.Cdn {
-				Info(v, "查询余票")
+				Info("v 查询余票")
 				go Order(v)
 			}
 
@@ -63,7 +63,7 @@ func DoForWardRequest(forwardAddress, method, requestUrl string, body io.Reader)
 		return ""
 	}
 	//add header
-	AddReqestHeader(req)
+	AddReqestHeader(req, method)
 
 	var errWrite error
 
@@ -93,13 +93,15 @@ func DoForWardRequest(forwardAddress, method, requestUrl string, body io.Reader)
 
 //获取队列
 func getQueueCount(v url.Values, values []string, cdn string) {
-
-	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getQueueCount", strings.NewReader(v.Encode()))
-	Info(body)
+	params, _ := url.QueryUnescape(v.Encode())
+	Info(params)
+	Info("getQueueCount:")
+	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getQueueCount", strings.NewReader(params))
+	Info("getQueueCount:", body)
 
 	//confirmSingleForQueue
 	urlValuesForQueue := url.Values{}
-	for k, v := range Config.GetQueueCountRequest {
+	for k, v := range Config.ConfirmSingleForQueue {
 		urlValuesForQueue.Add(k, v)
 	}
 	urlValuesForQueue.Add("key_check_isChange", values[1])
@@ -109,20 +111,22 @@ func getQueueCount(v url.Values, values []string, cdn string) {
 
 //再次确认？
 func confirmSingleForQueue(v url.Values, cdn string) {
-
+	Info("confirmSingleForQueue:")
+	Info(v)
 	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/confirmSingleForQueue", strings.NewReader(v.Encode()))
 	if strings.Contains(body, `"submitStatus":true`) {
-		Info(body)
+		Info("confirmSingleForQueue", body)
 	} else {
-		Warn(body)
+		Warn("confirmSingleForQueue", body)
 	}
 
 }
 
 //提交订单
 func submitOrderRequest(v url.Values, cdn string) {
-
-	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/autoSubmitOrderRequest", strings.NewReader(v.Encode()))
+	params, _ := url.QueryUnescape(v.Encode())
+	Debug(params)
+	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/autoSubmitOrderRequest", strings.NewReader(params))
 	Debug("body:", body)
 	if strings.Contains(body, `"submitStatus":true`) {
 		orderResoult := new(OrderResoult)
@@ -144,13 +148,19 @@ func submitOrderRequest(v url.Values, cdn string) {
 			getQueueCount(urlValues, v, cdn)
 		}
 	} else {
-		Warn("提交订单:", body)
+		Warn("提交订单警告:", body)
 	}
 }
 
 //order
-func Order(cdn string) {
+func queryJs(cdn string) {
+	body := DoForWardRequest(cdn, "GET", "https://kyfw.12306.cn/otn/dynamicJs/queryJs", nil)
+	Debug("body:", body)
+}
 
+func Order(cdn string) {
+	queryJs(cdn)
+	getPassengerDTO(cdn)
 	if tickets := queryLeftTicket(cdn); tickets != nil {
 		for _, d := range tickets.Data {
 			if d.Ticket.StationTrainCode == Config.Submit.TrainCode && d.Ticket.YingWoNum != "*" && d.Ticket.YingWoNum != "--" && d.Ticket.YingWoNum != "无" {
@@ -195,14 +205,16 @@ func queryLeftTicket(cdn string) *QueryLeftNewDTO {
 }
 
 //获取联系人
-func getPassengerDTO() {
-	body := DoForWardRequest(Config.System.Cdn[1], "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
+func getPassengerDTO(cdn string) *PassengerDTO {
+	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
 	Debug("body:", body)
 	passenger := new(PassengerDTO)
 
 	if err := json.Unmarshal([]byte(body), &passenger); err != nil {
 		Error(err)
+		return nil
 	} else {
 		// Debug(passenger.Data.NormalPassengers[0])
+		return passenger
 	}
 }

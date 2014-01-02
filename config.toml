@@ -1,17 +1,12 @@
 # This is a TOML document. Boom.
 
 [login]
-cookie="JSESSIONID=1FB2454BB16817B252D2676CC437EFCD; BIGipServerotn=1591279882.64545.0000; BIGipServerportal=3084124426.17695.0000; _jc_save_fromStation=%u4E4C%u9C81%u6728%u9F50%2CWMR; _jc_save_toStation=%u6B66%u6C49%2CWHN; _jc_save_fromDate=2014-01-19; _jc_save_toDate=2014-01-02; _jc_save_wfdc_flag=dc"
+cookie="JSESSIONID=F38A5B49C8E1AEF1A420455D6D7D73C8; BIGipServerotn=1507393802.24610.0000; BIGipServerportal=2949906698.17183.0000; _jc_save_fromStation=%u6B66%u6C49%2CWHN; _jc_save_toStation=%u4EAC%u5C71%2CJCN; _jc_save_fromDate=2014-01-21; _jc_save_toDate=2014-01-02; _jc_save_wfdc_flag=dc"
 user_agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36"
 
-[query]
-train_date="2014-01-19"
-from_station="WHN"
-to_station="JCN"
-purpose_codes="ADULT"
 
 [submit]
-train_code="T36"
+train_code="K8084"
 passenger_ticket_str=""
 old_passenger_str=""
 
@@ -42,36 +37,48 @@ cdn = [
 ]
 
 [left_ticket]
-leftTicketDTO.train_date="2014-01-21"
-leftTicketDTO.from_station="WMR"
-leftTicketDTO.to_station="WHN"
+leftTicketDTO.train_date="2014-01-19"
+leftTicketDTO.from_station="WHN"
+leftTicketDTO.to_station="JCN"
 purpose_codes="ADULT"
 
 [order_request]
-train_date="2014-01-21"
+train_date="2014-01-19"
 tour_flag="dc"
 purpose_codes="ADULT"
-query_from_station_name="乌鲁木齐"
-query_to_station_name="武昌"
+query_from_station_name="武汉"
+query_to_station_name="京山"
 cancel_flag="2"
 bed_level_order_num="000000000000000000000000000000"
-passengerTicketStr="3,0,1,钟杨梅,1,510321198711120506,13387576977,N"
-oldPassengerStr="钟杨梅,1,510321198711120506,1_"
+passengerTicketStr="3,0,1,徐鸿,1,513721199002244193,18988768229,N_3,0,1,刘显忠,1,513025196410015190,,N_3,0,1,徐晓平,1,513025196912044194,,N_3,0,1,刘俊俊,1,41088219900302862X,15818529867,N_3,0,1,米大英,1,51302519690311420X,18988768229,N"
+oldPassengerStr="徐鸿,1,513721199002244193,1_刘显忠,1,513025196410015190,1_徐晓平,1,513025196912044194,1_刘俊俊,1,41088219900302862X,1_米大英,1,51302519690311420X,1_"
 
 [get_queue_count]
-train_date="Mon+Jan+20+2014+08%3A00%3A01+GMT%2B0800+(China+Standard+Time)"
-train_no="9300000T3603"
-stationTrainCode="T36"
+train_date="Mon+Jan+20+2014+08%3A10%3A31+GMT%2B0800+(China+Standard+Time)"
+train_no="39000K808430"
+stationTrainCode="K8084"
 seatType="3"
-fromStationTelecode="WCN"
+fromStationTelecode="WHN"
 toStationTelecode="JCN"
 purpose_codes="ADULT"
 _json_att=""
 
 [confirm_single_for_queue]
-passengerTicketStr="3%2C0%2C1%2C%E9%92%9F%E6%9D%A8%E6%A2%85%2C1%2C510321198711120506%2C13387576977%2CN"
-oldPassengerStr="%E9%92%9F%E6%9D%A8%E6%A2%85%2C1%2C510321198711120506%2C1_"
+passengerTicketStr="3,0,1,徐鸿,1,513721199002244193,18988768229,N_3,0,1,刘显忠,1,513025196410015190,,N_3,0,1,徐晓平,1,513025196912044194,,N_3,0,1,刘俊俊,1,41088219900302862X,15818529867,N_3,0,1,米大英,1,51302519690311420X,18988768229,N"
+oldPassengerStr="徐鸿,1,513721199002244193,1_刘显忠,1,513025196410015190,1_徐晓平,1,513025196912044194,1_刘俊俊,1,41088219900302862X,1_米大英,1,51302519690311420X,1_"
 randCode=""
 purpose_codes="ADULT"
 train_location="N2"
 _json_att=""
+
+
+
+
+
+
+
+[query]
+train_date="2014-01-19"
+from_station="WHN"
+to_station="JCN"
+purpose_codes="ADULT"
