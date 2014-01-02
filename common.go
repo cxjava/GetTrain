@@ -69,9 +69,7 @@ func ReadConfig() error {
 		return err
 	}
 	Debug(Config.System.Cdn)
-	for k, v := range Config.LeftTicket {
-		Debug(k, " = ", v)
-	}
+
 	return nil
 }
 

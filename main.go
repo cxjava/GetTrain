@@ -13,6 +13,12 @@ import (
 	"time"
 )
 
+var (
+	passengerDTO       PassengerDTO
+	passengerTicketStr string
+	oldPassengerStr    string
+)
+
 func main() {
 	//日志
 	SetLogInfo()
@@ -23,13 +29,12 @@ func main() {
 	}
 
 	runtime.GOMAXPROCS(runtime.NumCPU() - 1)
-	Info("aa")
+	go getPassengerDTO(Config.System.Cdn[0])
 	//5秒钟
 	timer := time.NewTicker(5 * time.Second)
 	for {
 		select {
 		case <-timer.C:
-
 			for _, v := range Config.System.Cdn {
 				Info("v 查询余票")
 				go Order(v)
@@ -37,8 +42,21 @@ func main() {
 
 		}
 	}
-	Info("Trigger")
-	Info("for")
+}
+func ParsePassager() {
+	for _, v := range passengerDTO.Data.NormalPassengers {
+		for _, name := range Config.OrderInfo.PassengerName {
+			if name == v.PassengerName {
+				// passengerTicketStr="3,0,1,徐鸿,1,513721199002244193,18988768229,N_3,0,1,刘显忠,1,513025196410015190,,N_3,0,1,徐晓平,1,513025196912044194,,N_3,0,1,刘俊俊,1,41088219900302862X,15818529867,N_3,0,1,米大英,1,51302519690311420X,18988768229,N"
+				// oldPassengerStr="徐鸿,1,513721199002244193,1_刘显忠,1,513025196410015190,1_徐晓平,1,513025196912044194,1_刘俊俊,1,41088219900302862X,1_米大英,1,51302519690311420X,1_"
+				passengerTicketStr += Config.OrderInfo.SeatType + ",0,1," + name + "," + v.PassengerIdTypeCode + "," + v.PassengerIdNo + "," + v.Mobile + ",N_"
+				oldPassengerStr += name + "," + v.PassengerIdTypeCode + "," + v.PassengerIdNo + ",1_"
+			}
+		}
+	}
+	passengerTicketStr = passengerTicketStr[:len(passengerTicketStr)-1]
+	Info(passengerTicketStr)
+	Info(oldPassengerStr)
 }
 
 //转发
@@ -94,10 +112,9 @@ func DoForWardRequest(forwardAddress, method, requestUrl string, body io.Reader)
 //获取队列
 func getQueueCount(v url.Values, values []string, cdn string) {
 	params, _ := url.QueryUnescape(v.Encode())
-	Info(params)
-	Info("getQueueCount:")
+	Info("getQueueCount Params", params)
 	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getQueueCount", strings.NewReader(params))
-	Info("getQueueCount:", body)
+	Info("getQueueCount body:", body)
 
 	//confirmSingleForQueue
 	urlValuesForQueue := url.Values{}
@@ -106,24 +123,25 @@ func getQueueCount(v url.Values, values []string, cdn string) {
 	}
 	urlValuesForQueue.Add("key_check_isChange", values[1])
 	urlValuesForQueue.Add("leftTicketStr", values[2])
+	urlValuesForQueue.Add("passengerTicketStr", oldPassengerStr)
+	urlValuesForQueue.Add("oldPassengerStr", oldPassengerStr)
 	confirmSingleForQueue(urlValuesForQueue, cdn)
 }
 
 //再次确认？
 func confirmSingleForQueue(v url.Values, cdn string) {
-	Info("confirmSingleForQueue:")
-	Info(v)
+	Info("confirmSingleForQueue Params:", v)
 	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/confirmSingleForQueue", strings.NewReader(v.Encode()))
 	if strings.Contains(body, `"submitStatus":true`) {
-		Info("confirmSingleForQueue", body)
+		Info("confirmSingleForQueue body:", body)
 	} else {
-		Warn("confirmSingleForQueue", body)
+		Warn("confirmSingleForQueue body:", body)
 	}
 
 }
 
 //提交订单
-func submitOrderRequest(v url.Values, cdn string) {
+func submitOrderRequest(v url.Values, cdn string, t ticket) {
 	params, _ := url.QueryUnescape(v.Encode())
 	Debug(params)
 	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/autoSubmitOrderRequest", strings.NewReader(params))
@@ -145,6 +163,11 @@ func submitOrderRequest(v url.Values, cdn string) {
 				urlValues.Add(k, v)
 			}
 			urlValues.Add("leftTicket", v[2])
+			urlValues.Add("train_no", t.TrainNo)
+			urlValues.Add("stationTrainCode", t.StationTrainCode)
+			urlValues.Add("seatType", Config.OrderInfo.SeatType)
+			urlValues.Add("fromStationTelecode", t.FromStationTelecode)
+			urlValues.Add("toStationTelecode", t.ToStationTelecode)
 			getQueueCount(urlValues, v, cdn)
 		}
 	} else {
@@ -160,10 +183,10 @@ func queryJs(cdn string) {
 
 func Order(cdn string) {
 	queryJs(cdn)
-	getPassengerDTO(cdn)
+
 	if tickets := queryLeftTicket(cdn); tickets != nil {
 		for _, d := range tickets.Data {
-			if d.Ticket.StationTrainCode == Config.Submit.TrainCode && d.Ticket.YingWoNum != "*" && d.Ticket.YingWoNum != "--" && d.Ticket.YingWoNum != "无" {
+			if d.Ticket.StationTrainCode == Config.OrderInfo.TrainCode && d.Ticket.YingWoNum != "*" && d.Ticket.YingWoNum != "--" && d.Ticket.YingWoNum != "无" {
 				Debug(d)
 				Info("硬卧:", d.Ticket.YingWoNum, "软卧:", d.Ticket.RuanWoNum, "硬座:", d.Ticket.YingZuoNum)
 				urlValues := url.Values{}
@@ -171,7 +194,12 @@ func Order(cdn string) {
 					urlValues.Add(k, v)
 				}
 				urlValues.Add("secretStr", d.SecretStr)
-				submitOrderRequest(urlValues, cdn)
+				urlValues.Add("train_date", Config.OrderInfo.TrainDate)
+				urlValues.Add("query_from_station_name", d.Ticket.FromStationName)
+				urlValues.Add("query_to_station_name", d.Ticket.ToStationName)
+				urlValues.Add("passengerTicketStr", passengerTicketStr)
+				urlValues.Add("oldPassengerStr", oldPassengerStr)
+				submitOrderRequest(urlValues, cdn, d.Ticket)
 			} else {
 				Info(d.Ticket.StationTrainCode, "硬卧:", d.Ticket.YingWoNum, "软卧:", d.Ticket.RuanWoNum, "硬座:", d.Ticket.YingZuoNum)
 			}
@@ -185,11 +213,14 @@ func Order(cdn string) {
 //查询余票
 func queryLeftTicket(cdn string) *QueryLeftNewDTO {
 	leftTicketUrl := "https://kyfw.12306.cn/otn/leftTicket/query?"
-	for k, v := range Config.LeftTicket {
-		leftTicketUrl += k + "=" + v + "&"
-	}
+
+	leftTicketUrl += "leftTicketDTO.train_date=" + Config.OrderInfo.TrainDate + "&"
+	leftTicketUrl += "leftTicketDTO.from_station=" + Config.OrderInfo.FromStation + "&"
+	leftTicketUrl += "leftTicketDTO.to_station=" + Config.OrderInfo.ToStation + "&"
+	leftTicketUrl += "purpose_codes=ADULT"
+
 	Debug("request url:", leftTicketUrl)
-	body := DoForWardRequest(cdn, "GET", leftTicketUrl[:len(leftTicketUrl)-1], nil)
+	body := DoForWardRequest(cdn, "GET", leftTicketUrl, nil)
 	Debug("body:", body)
 	leftTicket := new(QueryLeftNewDTO)
 
@@ -205,16 +236,17 @@ func queryLeftTicket(cdn string) *QueryLeftNewDTO {
 }
 
 //获取联系人
-func getPassengerDTO(cdn string) *PassengerDTO {
+func getPassengerDTO(cdn string) {
+	Info("获取联系人")
 	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
 	Debug("body:", body)
-	passenger := new(PassengerDTO)
 
-	if err := json.Unmarshal([]byte(body), &passenger); err != nil {
+	if err := json.Unmarshal([]byte(body), &passengerDTO); err != nil {
 		Error(err)
-		return nil
+		return
 	} else {
-		// Debug(passenger.Data.NormalPassengers[0])
-		return passenger
+		Debug(passengerDTO.Data.NormalPassengers[0])
+		Info("success!")
+		ParsePassager()
 	}
 }
