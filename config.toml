@@ -1,7 +1,7 @@
 # This is a TOML document. Boom.
 
 [login]
-cookie="JSESSIONID=FDD2C8DC50091CFEE2C0314F61684946; BIGipServerotn=1507393802.24610.0000; BIGipServerportal=2949906698.17183.0000; _jc_save_fromStation=%u6B66%u6C49%2CWHN; _jc_save_toStation=%u4EAC%u5C71%2CJCN; _jc_save_fromDate=2014-01-21; _jc_save_toDate=2014-01-02; _jc_save_wfdc_flag=dc"
+cookie="JSESSIONID=64791E7A440DE5357572ADBA1D786E42; BIGipServerotn=1507393802.24610.0000; BIGipServerportal=2949906698.17183.0000; _jc_save_fromStation=%u6B66%u6C49%2CWHN; _jc_save_toStation=%u4EAC%u5C71%2CJCN; _jc_save_fromDate=2014-01-20; _jc_save_toDate=2014-01-02; _jc_save_wfdc_flag=dc"
 user_agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36"
 
 
@@ -11,8 +11,11 @@ train_date="2014-01-20"
 from_station="WHN"
 to_station="JCN"
 passenger_name=[
-  "cxjava",
-  "潘晓林"
+  "刘俊俊",
+  "刘显忠",
+  "刘鹏",
+  "岳玉舜",
+  "徐子和"
 ]
 #硬卧3 硬座
 seat_type = "3"
@@ -52,7 +55,7 @@ cancel_flag="2"
 bed_level_order_num="000000000000000000000000000000"
 
 [get_queue_count]
-train_date="Mon+Jan+20+2014+10%3A10%3A31+GMT%2B0800+(China+Standard+Time)"
+train_date="Mon+Jan+20+2014+11%3A10%3A31+GMT%2B0800+(China+Standard+Time)"
 purpose_codes="ADULT"
 _json_att=""
 

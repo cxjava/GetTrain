@@ -44,13 +44,13 @@ func main() {
 	}
 }
 func ParsePassager() {
-	for _, v := range passengerDTO.Data.NormalPassengers {
-		for _, name := range Config.OrderInfo.PassengerName {
-			if name == v.PassengerName {
-				// passengerTicketStr="3,0,1,徐鸿,1,513721199002244193,18988768229,N_3,0,1,刘显忠,1,513025196410015190,,N_3,0,1,徐晓平,1,513025196912044194,,N_3,0,1,刘俊俊,1,41088219900302862X,15818529867,N_3,0,1,米大英,1,51302519690311420X,18988768229,N"
-				// oldPassengerStr="徐鸿,1,513721199002244193,1_刘显忠,1,513025196410015190,1_徐晓平,1,513025196912044194,1_刘俊俊,1,41088219900302862X,1_米大英,1,51302519690311420X,1_"
-				passengerTicketStr += Config.OrderInfo.SeatType + ",0,1," + name + "," + v.PassengerIdTypeCode + "," + v.PassengerIdNo + "," + v.Mobile + ",N_"
-				oldPassengerStr += name + "," + v.PassengerIdTypeCode + "," + v.PassengerIdNo + ",1_"
+	if len(passengerDTO.Data.NormalPassengers) > 0 {
+		for _, v := range passengerDTO.Data.NormalPassengers {
+			for _, name := range Config.OrderInfo.PassengerName {
+				if name == v.PassengerName {
+					passengerTicketStr += Config.OrderInfo.SeatType + ",0,1," + name + "," + v.PassengerIdTypeCode + "," + v.PassengerIdNo + "," + v.Mobile + ",N_"
+					oldPassengerStr += name + "," + v.PassengerIdTypeCode + "," + v.PassengerIdNo + ",1_"
+				}
 			}
 		}
 	}
@@ -111,6 +111,8 @@ func DoForWardRequest(forwardAddress, method, requestUrl string, body io.Reader)
 
 //获取队列
 func getQueueCount(v url.Values, values []string, cdn string) {
+	getPassCodeNew(cdn)
+
 	params, _ := url.QueryUnescape(v.Encode())
 	Info("getQueueCount Params", params)
 	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getQueueCount", strings.NewReader(params))
@@ -123,7 +125,7 @@ func getQueueCount(v url.Values, values []string, cdn string) {
 	}
 	urlValuesForQueue.Add("key_check_isChange", values[1])
 	urlValuesForQueue.Add("leftTicketStr", values[2])
-	urlValuesForQueue.Add("passengerTicketStr", oldPassengerStr)
+	urlValuesForQueue.Add("passengerTicketStr", passengerTicketStr)
 	urlValuesForQueue.Add("oldPassengerStr", oldPassengerStr)
 	confirmSingleForQueue(urlValuesForQueue, cdn)
 }
@@ -178,6 +180,12 @@ func submitOrderRequest(v url.Values, cdn string, t ticket) {
 //order
 func queryJs(cdn string) {
 	body := DoForWardRequest(cdn, "GET", "https://kyfw.12306.cn/otn/dynamicJs/queryJs", nil)
+	Debug("body:", body)
+}
+
+//order
+func getPassCodeNew(cdn string) {
+	body := DoForWardRequest(cdn, "GET", "https://kyfw.12306.cn/otn/passcodeNew/getPassCodeNew.do?module=login&rand=sjrand&0.2866508506704122", nil)
 	Debug("body:", body)
 }
 
