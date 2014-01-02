@@ -1,13 +1,12 @@
 package main
 
 import (
-	//"bufio"
 	"compress/gzip"
-	//"io"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	//"strings"
+	"strconv"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 )
@@ -68,8 +67,6 @@ func ReadConfig() error {
 		Error(err)
 		return err
 	}
-	Debug(Config.System.Cdn)
-
 	return nil
 }
 
@@ -79,4 +76,59 @@ func SetLogInfo() {
 	SetLevel(2)
 	SetLogger("console", "")
 	SetLogger("file", `{"filename":"log.log"}`)
+}
+
+//获取车票余票信息
+//getTicketNum("O008450822M010250252O008453240", "O0M0O0")
+func getTicketNum(yupiaoInfo, seat_types string) (ticketNum map[string]int) {
+	ticketNum = make(map[string]int)
+	//去除第一个类型，因为第一类型比较特殊，下面的str同样去掉
+	types := strings.Split(seat_types[2:len(seat_types)-1], "0")
+	//判断第一个类型
+	if strings.HasPrefix(yupiaoInfo, "10") {
+		num, _ := strconv.Atoi(yupiaoInfo[7:10])
+		ticketNum["无座"] = num
+	} else if strings.HasPrefix(yupiaoInfo, "O0") {
+		num, _ := strconv.Atoi(yupiaoInfo[7:10])
+		ticketNum["二等座"] = num
+	} else if strings.HasPrefix(yupiaoInfo, "60") {
+		num, _ := strconv.Atoi(yupiaoInfo[7:10])
+		ticketNum["高级软卧"] = num
+	} else {
+		num, _ := strconv.Atoi(yupiaoInfo[7:10])
+		ticketNum[yupiaoInfo[0:2]] = num
+	}
+
+	yupiaoInfo = yupiaoInfo[10:]
+
+	for _, v := range types {
+		key := v + "0"
+		start := strings.Index(yupiaoInfo, key) + 7
+		end := start + 3
+		num, _ := strconv.Atoi(yupiaoInfo[start:end])
+		switch key {
+		case "10":
+			ticketNum["硬座"] = num
+		case "20":
+			ticketNum["软座"] = num
+		case "30":
+			ticketNum["硬卧"] = num
+		case "40":
+			ticketNum["软卧"] = num
+		case "O0":
+			ticketNum["高铁无座"] = num
+		case "M0":
+			ticketNum["一等座"] = num
+		case "90":
+			ticketNum["商务座"] = num
+		case "P0":
+			ticketNum["特等座"] = num
+		default:
+			ticketNum[key] = num
+		}
+
+		yupiaoInfo = yupiaoInfo[end:]
+
+	}
+	return
 }
