@@ -1,12 +1,14 @@
 package main
 
 type config struct {
-	Login        login
-	Query        query
-	Submit       submit
-	System       system
-	LeftTicket   map[string]string `toml:"left_ticket"`
-	OrderRequest map[string]string `toml:"order_request"`
+	Login                 login
+	Query                 query
+	Submit                submit
+	System                system
+	LeftTicket            map[string]string `toml:"left_ticket"`
+	OrderRequest          map[string]string `toml:"order_request"`
+	GetQueueCountRequest  map[string]string `toml:"get_queue_count"`
+	ConfirmSingleForQueue map[string]string `toml:"confirm_single_for_queue"`
 }
 
 type login struct {

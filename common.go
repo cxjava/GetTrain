@@ -77,7 +77,7 @@ func ReadConfig() error {
 //设置log相关
 func SetLogInfo() {
 	// debug 1, info 2
-	SetLevel(1)
+	SetLevel(2)
 	SetLogger("console", "")
 	SetLogger("file", `{"filename":"log.log"}`)
 }

@@ -58,3 +58,34 @@ type ticket struct {
 	YiDengZuoNum         string `json:"zy_num"`                 //一等座
 	ShangWuZuoNum        string `json:"swz_num"`                //商务座
 }
+
+type OrderResoult struct {
+	Basic
+	Data struct {
+		Result       string `json:"result"`
+		SubmitStatus bool   `json:"submitStatus"`
+	}
+	Messages         []interface{} `json:"messages,omitempty"`
+	ValidateMessages interface{}   `json:"validateMessages,omitempty"`
+}
+
+type QueueCountResoult struct {
+	Basic
+	Data struct {
+		Count  string `json:"count"`
+		Ticket string `json:"ticket"`
+		OP2    string `json:"op_2"`
+		CountT string `json:"countT"`
+		OP1    string `json:"op_1"`
+	}
+	Messages         []interface{} `json:"messages,omitempty"`
+	ValidateMessages interface{}   `json:"validateMessages,omitempty"`
+}
+type ConfirmSingleForQueueResoult struct {
+	Basic
+	Data struct {
+		SubmitStatus string `json:"submitStatus"`
+	}
+	Messages         []interface{} `json:"messages,omitempty"`
+	ValidateMessages interface{}   `json:"validateMessages,omitempty"`
+}
