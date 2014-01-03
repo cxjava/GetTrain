@@ -20,7 +20,8 @@ var (
 	passengerDTO       PassengerDTO
 	passengerTicketStr string
 	oldPassengerStr    string
-	mainChannel        = make(chan int, 1) // 主线程
+	mainChannel        = make(chan int, 1)       // 主线程
+	availableCDN       = make(map[string]string) //可用cdn
 )
 
 func main() {
@@ -39,10 +40,15 @@ func main() {
 	if Config.System.OrderSize > 1 {
 		mainChannel = make(chan int, Config.System.OrderSize) // 主线程
 	}
+	//设置CDN
+	for _, v := range Config.System.Cdn {
+		availableCDN[v] = v
+	}
 	//设置CPU
 	//runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 	//获取联系人
 	go getPassengerDTO(Config.System.Cdn[0])
+	go getAllCDN()
 	//查询间隔时间
 	timer := time.NewTicker(time.Duration(Config.System.RefreshTime) * time.Millisecond)
 	for {
@@ -50,12 +56,13 @@ func main() {
 		case <-timer.C:
 			Info("查询余票")
 			//去多个CDN查询
-			for _, v := range Config.System.Cdn {
+			for _, v := range availableCDN {
 				go Order(v)
 			}
 
 		}
 	}
+
 }
 
 //转发
@@ -275,6 +282,7 @@ func queryLeftTicket(cdn, trainDate string) *QueryLeftNewDTO {
 	if err := json.Unmarshal([]byte(body), &leftTicket); err != nil {
 		Error("queryLeftTicket", cdn, err)
 		Error("queryLeftTicket", cdn, body)
+		delete(availableCDN, cdn)
 		return nil
 	}
 
@@ -342,5 +350,15 @@ func sendMessage(infos string) {
 			return
 		}
 		defer response.Body.Close()
+	}
+}
+
+func getAllCDN() {
+	timer := time.NewTicker(time.Duration(60*1000) * time.Millisecond)
+	for {
+		select {
+		case <-timer.C:
+			Info("可用CDN:", fmt.Sprintf("%v", availableCDN))
+		}
 	}
 }
