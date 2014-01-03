@@ -244,7 +244,7 @@ func Order(cdn string) {
 
 							go submitOrderRequest(urlValues, cdn, tkt)
 						} else {
-							Warn("！！！车次", tkt.StationTrainCode, "余票不足！！！", fmt.Sprintf("%v", ticketNum))
+							Debug("！！！车次", tkt.StationTrainCode, "余票不足！！！", fmt.Sprintf("%v", ticketNum))
 						}
 					} else { //不是预订的车次
 						//Debug(tkt.StationTrainCode, "余票", fmt.Sprintf("%v", getTicketNum(tkt.YpInfo, tkt.YpEx)))
