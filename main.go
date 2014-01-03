@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
@@ -20,7 +19,8 @@ var (
 	passengerDTO       PassengerDTO
 	passengerTicketStr string
 	oldPassengerStr    string
-	mainChannel        = make(chan int, 1)       // 主线程
+	submitChannel      = make(chan int, 1)       // 提交池
+	queryChannel       = make(chan int, 10)      // 查询池
 	availableCDN       = make(map[string]string) //可用cdn
 )
 
@@ -38,7 +38,11 @@ func main() {
 	}
 	//设置提交订单线程大小
 	if Config.System.OrderSize > 1 {
-		mainChannel = make(chan int, Config.System.OrderSize) // 主线程
+		submitChannel = make(chan int, Config.System.OrderSize)
+	}
+	//设置查询订单线程大小
+	if Config.System.QuerySize > 1 {
+		queryChannel = make(chan int, Config.System.QuerySize)
 	}
 	//设置CDN
 	for _, v := range Config.System.Cdn {
@@ -56,8 +60,10 @@ func main() {
 		case <-timer.C:
 			Info("查询余票")
 			//去多个CDN查询
-			for _, v := range availableCDN {
-				go Order(v)
+			for _, date := range Config.OrderInfo.TrainDate { //轮询日期
+				for _, v := range availableCDN {
+					go Order(v, date)
+				}
 			}
 
 		}
@@ -159,9 +165,9 @@ func confirmSingleForQueue(v url.Values, cdn string) {
 //提交订单
 func submitOrderRequest(v url.Values, cdn string, t ticket) {
 	defer func() {
-		<-mainChannel
+		<-submitChannel
 	}()
-	mainChannel <- 1
+	submitChannel <- 1
 
 	params, _ := url.QueryUnescape(v.Encode())
 	Debug(params)
@@ -221,47 +227,49 @@ func getPassCodeNew(cdn string) {
 }
 
 //查询
-func Order(cdn string) {
+func Order(cdn, date string) {
 	//睡眠下，随机
 	//time.Sleep(time.Millisecond * time.Duration(Config.System.SubmitTime))
-	time.Sleep(time.Millisecond * time.Duration(rand.Int63n(Config.System.RefreshTime)))
+	//time.Sleep(time.Millisecond * time.Duration(rand.Int63n(Config.System.RefreshTime)))
 
 	// queryJs(cdn)
+	defer func() {
+		<-queryChannel
+	}()
+	queryChannel <- 1
 
-	for _, date := range Config.OrderInfo.TrainDate { //轮询日期
-		if tickets := queryLeftTicket(cdn, date); tickets != nil { //获取车次
-			for _, data := range tickets.Data { //每个车次
-				for _, trainCode := range Config.OrderInfo.TrainCode { //要预订的车次
-					//查询到的车次
-					tkt := data.Ticket
-					if tkt.StationTrainCode == trainCode { //是预订的车次
-						//获取余票信息
-						ticketNum := getTicketNum(tkt.YpInfo, tkt.YpEx)
-						if ticketNum[Config.OrderInfo.SeatTypeName] >= len(Config.OrderInfo.PassengerName) { //想要预订席别的余票大于等于订票人的人数
-							Info(cdn, "开始订票", date, "车次", tkt.StationTrainCode, "余票", fmt.Sprintf("%v", ticketNum))
-							urlValues := url.Values{}
-							for k, v := range Config.OrderRequest {
-								urlValues.Add(k, v)
-							}
-							urlValues.Add("secretStr", data.SecretStr)
-							urlValues.Add("train_date", date)
-							urlValues.Add("query_from_station_name", tkt.FromStationName)
-							urlValues.Add("query_to_station_name", tkt.ToStationName)
-							urlValues.Add("passengerTicketStr", passengerTicketStr)
-							urlValues.Add("oldPassengerStr", oldPassengerStr)
-
-							go submitOrderRequest(urlValues, cdn, tkt)
-						} else {
-							Debug("！！！车次", tkt.StationTrainCode, "余票不足！！！", fmt.Sprintf("%v", ticketNum))
+	if tickets := queryLeftTicket(cdn, date); tickets != nil { //获取车次
+		for _, data := range tickets.Data { //每个车次
+			for _, trainCode := range Config.OrderInfo.TrainCode { //要预订的车次
+				//查询到的车次
+				tkt := data.Ticket
+				if tkt.StationTrainCode == trainCode { //是预订的车次
+					//获取余票信息
+					ticketNum := getTicketNum(tkt.YpInfo, tkt.YpEx)
+					if ticketNum[Config.OrderInfo.SeatTypeName] >= len(Config.OrderInfo.PassengerName) { //想要预订席别的余票大于等于订票人的人数
+						Info(cdn, "开始订票", date, "车次", tkt.StationTrainCode, "余票", fmt.Sprintf("%v", ticketNum))
+						urlValues := url.Values{}
+						for k, v := range Config.OrderRequest {
+							urlValues.Add(k, v)
 						}
-					} else { //不是预订的车次
-						//Debug(tkt.StationTrainCode, "余票", fmt.Sprintf("%v", getTicketNum(tkt.YpInfo, tkt.YpEx)))
+						urlValues.Add("secretStr", data.SecretStr)
+						urlValues.Add("train_date", date)
+						urlValues.Add("query_from_station_name", tkt.FromStationName)
+						urlValues.Add("query_to_station_name", tkt.ToStationName)
+						urlValues.Add("passengerTicketStr", passengerTicketStr)
+						urlValues.Add("oldPassengerStr", oldPassengerStr)
+
+						go submitOrderRequest(urlValues, cdn, tkt)
+					} else {
+						Debug("！！！车次", tkt.StationTrainCode, "余票不足！！！", fmt.Sprintf("%v", ticketNum))
 					}
+				} else { //不是预订的车次
+					//Debug(tkt.StationTrainCode, "余票", fmt.Sprintf("%v", getTicketNum(tkt.YpInfo, tkt.YpEx)))
 				}
 			}
-		} else {
-			Error(cdn, "余票查询错误", tickets)
 		}
+	} else {
+		Error(cdn, "余票查询错误", tickets)
 	}
 }
 
@@ -335,15 +343,14 @@ func sendMessage(infos string) {
 
 	if len(Config.System.Mobile) > 0 {
 		client := &http.Client{}
-		values := url.Values{}
 
-		values.Add("mobile", Config.System.Mobile)
-		reqest, err := http.NewRequest("POST", "http://yixin.im/api/dlfromsms", strings.NewReader(values.Encode()))
+		// urls := "http://mobile.alipay.com/main/smsdownload.json?action=smsJsonController&channel=5035&phoneNumber=" + Config.System.Mobile + "&productId=&_input_charset=utf-8&r=1388128497869&_callback=sendSmsCallback"
+		urls := "http://mobile.alipay.com/main/smsdownload_constantAddr.json?_callback=jQuery17209914382044225931_1388127995939&serviceCode=PMDR&needCheckCode=false&phoneNumber=" + Config.System.Mobile + "&_=1388128337347"
+		reqest, err := http.NewRequest("GET", urls, nil)
 		if err != nil {
 			Error(err)
 			return
 		}
-		reqest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 		response, err := client.Do(reqest)
 		if err != nil {
@@ -351,6 +358,14 @@ func sendMessage(infos string) {
 			return
 		}
 		defer response.Body.Close()
+
+		if response.StatusCode == http.StatusOK {
+			body := ParseResponseBody(response)
+			Info("DoForWardRequest body:", body)
+			log.Println("DoForWardRequest body:", body)
+		} else {
+			Error("StatusCode:", response.StatusCode)
+		}
 	}
 }
 

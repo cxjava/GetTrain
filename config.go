@@ -31,6 +31,7 @@ type system struct {
 	ProxyUrl    string `toml:"proxy_url"`
 	LogLevel    int    `toml:"log_level"`
 	OrderSize   int    `toml:"order_size"`
+	QuerySize   int    `toml:"query_size"`
 	RefreshTime int64  `toml:"refresh_time"`
 	SubmitTime  int64  `toml:"submit_time"`
 	Cdn         []string
