@@ -299,6 +299,11 @@ func queryLeftTicket(cdn, trainDate string) *QueryLeftNewDTO {
 	Debug("queryLeftTicket body:", body)
 	leftTicket := new(QueryLeftNewDTO)
 
+	if !strings.Contains(body, "queryLeftNewDTO") {
+		Error("查询余票出错，返回:", body, "查询链接:", leftTicketUrl)
+		return nil
+	}
+
 	if err := json.Unmarshal([]byte(body), &leftTicket); err != nil {
 		Error("queryLeftTicket", cdn, err)
 		Error("queryLeftTicket", cdn, body)
@@ -315,6 +320,12 @@ func getPassengerDTO(cdn string) {
 	Info("开始获取联系人！")
 	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
 	Debug("getPassengerDTO body:", body)
+
+	if !strings.Contains(body, "passenger_name") {
+		Error("获取联系人出错!!!!!!返回:", body)
+		Error("貌似cookie过期了哦～～～～")
+		return
+	}
 
 	if err := json.Unmarshal([]byte(body), &passengerDTO); err != nil {
 		Error("getPassengerDTO", cdn, err)
