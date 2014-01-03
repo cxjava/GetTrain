@@ -223,7 +223,8 @@ func getPassCodeNew(cdn string) {
 //查询
 func Order(cdn string) {
 	//睡眠下，随机
-	time.Sleep(time.Millisecond * time.Duration(rand.Int31n(2000)))
+	//time.Sleep(time.Millisecond * time.Duration(Config.System.SubmitTime))
+	time.Sleep(time.Millisecond * time.Duration(rand.Int63n(Config.System.SubmitTime)))
 
 	// queryJs(cdn)
 
