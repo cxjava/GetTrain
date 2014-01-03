@@ -253,7 +253,8 @@ func Order(cdn, date string) {
 				if tkt.StationTrainCode == trainCode { //是预订的车次
 					//获取余票信息
 					ticketNum := getTicketNum(tkt.YpInfo, tkt.YpEx)
-					if ticketNum[Config.OrderInfo.SeatTypeName] >= len(Config.OrderInfo.PassengerName) { //想要预订席别的余票大于等于订票人的人数
+					numOfTicket := ticketNum[Config.OrderInfo.SeatTypeName]
+					if numOfTicket >= len(Config.OrderInfo.PassengerName) { //想要预订席别的余票大于等于订票人的人数
 						Info(cdn, "开始订票", date, "车次", tkt.StationTrainCode, "余票", fmt.Sprintf("%v", ticketNum))
 						urlValues := url.Values{}
 						for k, v := range Config.OrderRequest {
@@ -267,8 +268,9 @@ func Order(cdn, date string) {
 						urlValues.Add("oldPassengerStr", oldPassengerStr)
 
 						go submitOrderRequest(urlValues, cdn, tkt)
-					} else {
-						Debug("！！！车次", tkt.StationTrainCode, "余票不足！！！", fmt.Sprintf("%v", ticketNum))
+
+					} else if numOfTicket > 0 && numOfTicket < len(Config.OrderInfo.PassengerName) {
+						Info("车次", tkt.StationTrainCode, "余票不足！！！", fmt.Sprintf("%v", ticketNum))
 					}
 				} else { //不是预订的车次
 					//Debug(tkt.StationTrainCode, "余票", fmt.Sprintf("%v", getTicketNum(tkt.YpInfo, tkt.YpEx)))
@@ -298,6 +300,7 @@ func queryLeftTicket(cdn, trainDate string) *QueryLeftNewDTO {
 	if err := json.Unmarshal([]byte(body), &leftTicket); err != nil {
 		Error("queryLeftTicket", cdn, err)
 		Error("queryLeftTicket", cdn, body)
+		//删除废弃的CDN
 		delete(availableCDN, cdn)
 		return nil
 	}
