@@ -32,6 +32,8 @@ func main() {
 		log.Println(err)
 		return
 	}
+	//获取站点
+	parseStationNames()
 	//设置日志
 	if Config.System.LogLevel > 0 {
 		SetLevel(Config.System.LogLevel)
