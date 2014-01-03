@@ -48,6 +48,13 @@ func main() {
 	for _, v := range Config.System.Cdn {
 		availableCDN[v] = v
 	}
+	Info("==========乘客信息===========")
+	Info("从", Config.OrderInfo.FromStation, "到", Config.OrderInfo.ToStation)
+	Info("日期", Config.OrderInfo.TrainDate)
+	Info("车次", Config.OrderInfo.TrainCode)
+	Info("席别", Config.OrderInfo.SeatTypeName)
+	Info("乘客", Config.OrderInfo.PassengerName)
+	Info("==========乘客信息===========")
 	//设置CPU
 	//runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 	//获取联系人
@@ -279,8 +286,8 @@ func queryLeftTicket(cdn, trainDate string) *QueryLeftNewDTO {
 	leftTicketUrl := "https://kyfw.12306.cn/otn/leftTicket/query?"
 
 	leftTicketUrl += "leftTicketDTO.train_date=" + trainDate + "&"
-	leftTicketUrl += "leftTicketDTO.from_station=" + Config.OrderInfo.FromStation + "&"
-	leftTicketUrl += "leftTicketDTO.to_station=" + Config.OrderInfo.ToStation + "&"
+	leftTicketUrl += "leftTicketDTO.from_station=" + stationMap[Config.OrderInfo.FromStation] + "&"
+	leftTicketUrl += "leftTicketDTO.to_station=" + stationMap[Config.OrderInfo.ToStation] + "&"
 	leftTicketUrl += "purpose_codes=ADULT"
 
 	Debug("queryLeftTicket url:", leftTicketUrl)
