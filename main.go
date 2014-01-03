@@ -354,11 +354,13 @@ func sendMessage(infos string) {
 }
 
 func getAllCDN() {
-	timer := time.NewTicker(time.Duration(60*1000) * time.Millisecond)
+	timer := time.NewTicker(time.Duration(10*1000) * time.Millisecond)
 	for {
 		select {
 		case <-timer.C:
-			Info("可用CDN:", fmt.Sprintf("%v", availableCDN))
+			if Config.System.ShowCDN {
+				Info("可用CDN:", fmt.Sprintf("%v", availableCDN))
+			}
 		}
 	}
 }

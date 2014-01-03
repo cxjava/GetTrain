@@ -1,7 +1,7 @@
 # This is a TOML document. Boom.
 
 [login]
-cookie="JSESSIONID=A0519C80CE9C15A5E29747BDD2737B0B; BIGipServerotn=2664694026.50210.0000; _jc_save_fromStation=%u6B66%u6C49%2CWHN; _jc_save_toStation=%u4EAC%u5C71%2CJCN; _jc_save_fromDate=2014-01-17; _jc_save_toDate=2014-01-02; _jc_save_wfdc_flag=dc"
+cookie="JSESSIONID=D9F916638834B1C88DF4E048318A99B2; _jc_save_toDate=2014-01-02; _jc_save_fromStation=%u91CD%u5E86%2CCQW; _jc_save_toStation=%u6B66%u6C49%2CWHN; _jc_save_fromDate=2014-01-21; _jc_save_wfdc_flag=dc; BIGipServerotn=1608057098.64545.0000"
 
 user_agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36"
 
@@ -9,8 +9,7 @@ user_agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like 
 [order_info]
 #车次
 train_code=[
-"K8084",
-"K8091"
+"K8083"
 ]
 #出发时间
 train_date=[
@@ -31,8 +30,8 @@ passenger_name=[
 ]
 
 # 硬座=="1" 软座=="2" 硬卧=="3" 软卧=="4" 
-seat_type = "4"
-seat_type_name = "软卧"
+seat_type = "3"
+seat_type_name = "硬卧"
 
 
 [system]
@@ -53,30 +52,32 @@ open ="explorer"
 open_params ="https://kyfw.12306.cn/otn/"
 
 #mobile=""
+#show_cdn=true
 
 cdn = [
 "113.57.187.29",
 "119.36.195.228",
-"220.113.9.116",
-"220.113.9.114",
-"219.243.47.167",
-"220.113.9.115",
-"123.125.92.28",
-"202.204.80.76",
-"219.243.47.166",
-"221.130.17.40",
-"162.105.28.233",
-"112.25.35.62",
-"221.130.17.42",
 "110.18.244.166",
-"124.14.10.18",
-"124.254.47.194",
-"122.70.142.160",
-"124.14.10.24",
-"221.238.252.180",
-"113.229.252.37",
+"125.39.19.91",
+"112.84.105.38",
+"182.118.15.39",
+"123.159.205.208",
+"175.43.20.80",
+"123.138.60.197",
+"202.102.254.188",
 "202.102.254.189",
-"211.162.127.77"
+"202.102.254.190",
+"112.65.220.39",
+"124.163.221.44",
+"113.229.252.37",
+"112.253.19.173",
+"163.177.242.54",
+"175.43.124.200",
+"112.91.29.16",
+"112.194.138.176",
+"112.194.138.173",
+"113.207.63.162",
+"123.138.60.183"
 ]
 
 

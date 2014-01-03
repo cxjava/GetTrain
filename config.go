@@ -34,5 +34,6 @@ type system struct {
 	RefreshTime int64  `toml:"refresh_time"`
 	SubmitTime  int64  `toml:"submit_time"`
 	Cdn         []string
+	ShowCDN     bool `toml:"show_cdn"`
 	Mobile      string
 }
