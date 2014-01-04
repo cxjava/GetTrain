@@ -32,10 +32,11 @@ type system struct {
 	LogLevel    int    `toml:"log_level"`
 	OrderSize   int    `toml:"order_size"`
 	QuerySize   int    `toml:"query_size"`
-	RefreshTime int64  `toml:"refresh_time"`
-	SubmitTime  int64  `toml:"submit_time"`
+	RefreshTime int64  `toml:"refresh_time"` //查询订单时间
+	SubmitTime  int64  `toml:"submit_time"`  //提交订单的停顿时间
 	Cdn         []string
-	ShowCDN     bool `toml:"show_cdn"`
-	Mobile      string
-	TimeOut     int `toml:"time_out"`
+	ShowCDN     bool   `toml:"show_cdn"` //是否显示CDN的过滤结果
+	Mobile      string //成功后的短信提示
+	TimeOut     int    `toml:"time_out"` //DoForWardRequest()的超时时间
+	GoBoth      bool   `toml:"go_both"`  //是否并行执行 getQueueCount()和confirmSingleForQueue()
 }

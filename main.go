@@ -33,7 +33,7 @@ func main() {
 		log.Println(err)
 		return
 	}
-	//获取站点
+	//获取站点,解析为 站点名称=字母
 	parseStationNames()
 	//设置日志
 	if Config.System.LogLevel > 0 {
@@ -138,34 +138,36 @@ func DoForWardRequest(forwardAddress, method, requestUrl string, body io.Reader)
 }
 
 //获取队列
-func getQueueCount(v url.Values, values []string, cdn string) {
+func getQueueCount(v url.Values, dataResult []string, cdn string) {
 	//获取下验证码
-	getPassCodeNew(cdn)
+	//go getPassCodeNew(cdn)
 
 	params, _ := url.QueryUnescape(v.Encode())
-	Info("getQueueCount Params", params)
+	Info("getQueueCount Params:", params)
 
 	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getQueueCount", strings.NewReader(params))
 	Info("getQueueCount body:", body)
+	if !Config.System.GoBoth {
+		//确认队列
+		urlValuesForQueue := url.Values{}
+		for k, v := range Config.ConfirmSingleForQueue {
+			urlValuesForQueue.Add(k, v)
+		}
+		urlValuesForQueue.Add("key_check_isChange", dataResult[1])
+		urlValuesForQueue.Add("leftTicketStr", dataResult[2])
+		urlValuesForQueue.Add("train_location", dataResult[0])
+		urlValuesForQueue.Add("passengerTicketStr", passengerTicketStr)
+		urlValuesForQueue.Add("oldPassengerStr", oldPassengerStr)
+		// 需要延迟提交，提早好像要被踢！！！
+		if Config.System.SubmitTime > 1000 {
+			time.Sleep(time.Millisecond * time.Duration(Config.System.SubmitTime))
+		}
 
-	urlValuesForQueue := url.Values{}
-	for k, v := range Config.ConfirmSingleForQueue {
-		urlValuesForQueue.Add(k, v)
+		go confirmSingleForQueue(urlValuesForQueue, cdn)
 	}
-	urlValuesForQueue.Add("key_check_isChange", values[1])
-	urlValuesForQueue.Add("leftTicketStr", values[2])
-	urlValuesForQueue.Add("train_location", values[0])
-	urlValuesForQueue.Add("passengerTicketStr", passengerTicketStr)
-	urlValuesForQueue.Add("oldPassengerStr", oldPassengerStr)
-	// 需要延迟提交，提早好像要被踢！！！
-	if Config.System.SubmitTime > 1000 {
-		time.Sleep(time.Millisecond * time.Duration(Config.System.SubmitTime))
-	}
-
-	confirmSingleForQueue(urlValuesForQueue, cdn)
 }
 
-//再次确认？
+//再次确认队列？
 func confirmSingleForQueue(v url.Values, cdn string) {
 	Info("confirmSingleForQueue Params:", v.Encode())
 	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/confirmSingleForQueue", strings.NewReader(v.Encode()))
@@ -178,13 +180,13 @@ func confirmSingleForQueue(v url.Values, cdn string) {
 }
 
 //提交订单
-func submitOrderRequest(v url.Values, cdn string, t ticket) {
+func submitOrderRequest(urlValues url.Values, cdn string, t ticket) {
 	defer func() {
 		<-submitChannel
 	}()
 	submitChannel <- 1
 
-	params, _ := url.QueryUnescape(v.Encode())
+	params, _ := url.QueryUnescape(urlValues.Encode())
 	Debug(params)
 
 	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/autoSubmitOrderRequest", strings.NewReader(params))
@@ -196,34 +198,58 @@ func submitOrderRequest(v url.Values, cdn string, t ticket) {
 			Error("submitOrderRequest", err)
 			return
 		} else {
-			v := strings.Split(orderResoult.Data.Result, "#")
+			dataResult := strings.Split(orderResoult.Data.Result, "#")
 			//key_check_isChange=99F79C00DFB9BF8713D23EFA4A8CF06BCA8C412DAC19686DCE306476
 			// leftTicketStr = 1002353600401115003110023507803007450039
 			// for getQueueCount
-			Info("key_check_isChange:", v[1], "leftTicket:", v[2])
-
+			Info("key_check_isChange:", dataResult[1], "leftTicket:", dataResult[2])
+			//获取队列
 			urlValues := url.Values{}
 			for k, v := range Config.GetQueueCountRequest {
 				urlValues.Add(k, v)
 			}
-			urlValues.Add("leftTicket", v[2])
+			urlValues.Add("leftTicket", dataResult[2])
 			urlValues.Add("train_no", t.TrainNo)
 			urlValues.Add("stationTrainCode", t.StationTrainCode)
 			urlValues.Add("seatType", Config.OrderInfo.SeatType)
 			urlValues.Add("fromStationTelecode", t.FromStationTelecode)
 			urlValues.Add("toStationTelecode", t.ToStationTelecode)
 
-			getQueueCount(urlValues, v, cdn)
+			go getQueueCount(urlValues, dataResult, cdn)
+
+			//是否同时进行提交表单
+			if Config.System.GoBoth {
+				//确认队列
+				urlValuesForQueue := url.Values{}
+				for k, v := range Config.ConfirmSingleForQueue {
+					urlValuesForQueue.Add(k, v)
+				}
+				urlValuesForQueue.Add("key_check_isChange", dataResult[1])
+				urlValuesForQueue.Add("leftTicketStr", dataResult[2])
+				urlValuesForQueue.Add("train_location", dataResult[0])
+				urlValuesForQueue.Add("passengerTicketStr", passengerTicketStr)
+				urlValuesForQueue.Add("oldPassengerStr", oldPassengerStr)
+				// 需要延迟提交，提早好像要被踢！！！
+				if Config.System.SubmitTime > 1000 {
+					time.Sleep(time.Millisecond * time.Duration(Config.System.SubmitTime))
+				}
+
+				go confirmSingleForQueue(urlValuesForQueue, cdn)
+			}
+
 		}
 	} else if strings.Contains(body, `您还有未处理的订单`) {
-		log.Println("订票成功！！！！！")
-		sendMessage("订票成功！！！！！")
+		log.Println("订票成功！！")
+		sendMessage("订票成功！！")
 	} else if strings.Contains(body, `用户未登录`) {
-		log.Println("用户未登录！！！！！")
-		sendMessage("用户未登录！！！！！")
+		log.Println("用户未登录！！")
+		sendMessage("用户未登录！！")
 	} else if strings.Contains(body, `取消次数过多`) {
-		log.Println("由于您取消次数过多！！！！！")
-		sendMessage("由于您取消次数过多！！！！！")
+		log.Println("由于您取消次数过多！！")
+		sendMessage("由于您取消次数过多！！")
+	} else if strings.Contains(body, `互联网售票实行实名制`) {
+		log.Println("貌似你已经购买了相同的车票！！")
+		sendMessage("貌似你已经购买了相同的车票！！")
 	} else {
 		Warn(cdn, "订票请求警告:", body)
 	}
@@ -262,7 +288,7 @@ func Order(cdn, date string) {
 				if tkt.StationTrainCode == trainCode { //是预订的车次
 					//获取余票信息
 					ticketNum := getTicketNum(tkt.YpInfo, tkt.YpEx)
-					numOfTicket := ticketNum[Config.OrderInfo.SeatTypeName]
+					numOfTicket := ticketNum[Config.OrderInfo.SeatTypeName] //通过配置的seattype获取余票信息
 					if numOfTicket >= len(Config.OrderInfo.PassengerName) { //想要预订席别的余票大于等于订票人的人数
 						Info(cdn, "开始订票", date, "车次", tkt.StationTrainCode, "余票", fmt.Sprintf("%v", ticketNum))
 						urlValues := url.Values{}
@@ -371,6 +397,11 @@ func ParsePassager() {
 				}
 			}
 		}
+	}
+	if len(passengerTicketStr) < 1 {
+		Error("在你的帐号中还没有发现以下联系人哦！！")
+		Error(Config.OrderInfo.PassengerName)
+		return
 	}
 	passengerTicketStr = passengerTicketStr[:len(passengerTicketStr)-1]
 	Info(passengerTicketStr)
