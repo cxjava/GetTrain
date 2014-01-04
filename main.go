@@ -65,8 +65,11 @@ func main() {
 	//设置CPU
 	//runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 	//获取联系人
-	go getPassengerDTO(Config.System.Cdn[0])
-	go getAllCDN()
+	go getPassengerDTO()
+
+	if Config.System.ShowCDN {
+		go getAllCDN()
+	}
 	//查询间隔时间
 	timer := time.NewTicker(time.Duration(Config.System.RefreshTime) * time.Millisecond)
 	for {
@@ -251,11 +254,12 @@ func Order(cdn, date string) {
 	queryChannel <- 1
 
 	if tickets := queryLeftTicket(cdn, date); tickets != nil { //获取车次
-		for _, data := range tickets.Data { //每个车次
-			for _, trainCode := range Config.OrderInfo.TrainCode { //要预订的车次
+		for _, trainCode := range Config.OrderInfo.TrainCode { //要预订的车次
+			trainCode = strings.ToUpper(trainCode)
+			for _, data := range tickets.Data { //每个车次
 				//查询到的车次
 				tkt := data.Ticket
-				if tkt.StationTrainCode == strings.ToUpper(trainCode) { //是预订的车次
+				if tkt.StationTrainCode == trainCode { //是预订的车次
 					//获取余票信息
 					ticketNum := getTicketNum(tkt.YpInfo, tkt.YpEx)
 					numOfTicket := ticketNum[Config.OrderInfo.SeatTypeName]
@@ -304,7 +308,10 @@ func queryLeftTicket(cdn, trainDate string) *QueryLeftNewDTO {
 
 	if !strings.Contains(body, "queryLeftNewDTO") {
 		Error("查询余票出错，返回:", body, "查询链接:", leftTicketUrl)
-		delete(availableCDN, cdn)
+		//删除废弃的CDN
+		if len(availableCDN) > 5 {
+			delete(availableCDN, cdn)
+		}
 		return nil
 	}
 
@@ -312,7 +319,9 @@ func queryLeftTicket(cdn, trainDate string) *QueryLeftNewDTO {
 		Error("queryLeftTicket", cdn, err)
 		Error("queryLeftTicket", cdn, body)
 		//删除废弃的CDN
-		delete(availableCDN, cdn)
+		if len(availableCDN) > 5 {
+			delete(availableCDN, cdn)
+		}
 		return nil
 	}
 
@@ -320,24 +329,33 @@ func queryLeftTicket(cdn, trainDate string) *QueryLeftNewDTO {
 }
 
 //获取联系人
-func getPassengerDTO(cdn string) {
-	Info("开始获取联系人！")
-	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
-	Debug("getPassengerDTO body:", body)
+func getPassengerDTO() {
+	success := ""
+	for _, cdn := range Config.System.Cdn {
+		Info("开始获取联系人！")
+		body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", nil)
+		Debug("getPassengerDTO body:", body)
 
-	if !strings.Contains(body, "passenger_name") {
-		Error("获取联系人出错!!!!!!返回:", body)
-		Error("貌似cookie过期了哦～～～～")
-		return
+		if !strings.Contains(body, "passenger_name") {
+			Error("获取联系人出错!!!!!!返回:", body)
+			Error("貌似你还没有登录了,或者你的网速太慢了～～")
+			success = "no"
+			continue
+		}
+
+		if err := json.Unmarshal([]byte(body), &passengerDTO); err != nil {
+			Error("getPassengerDTO", cdn, err)
+			success = "no"
+			continue
+		} else {
+			Info(cdn, "获取成功！")
+			ParsePassager()
+			success = "yes"
+			break
+		}
 	}
-
-	if err := json.Unmarshal([]byte(body), &passengerDTO); err != nil {
-		Error("getPassengerDTO", cdn, err)
-		return
-	} else {
-		Debug(passengerDTO.Data.NormalPassengers[0])
-		Info(cdn, "获取成功！")
-		ParsePassager()
+	if success != "yes" {
+		os.Exit(1)
 	}
 }
 
@@ -401,9 +419,9 @@ func getAllCDN() {
 	for {
 		select {
 		case <-timer.C:
-			if Config.System.ShowCDN {
-				Info("可用CDN:", fmt.Sprintf("%v", availableCDN))
-			}
+
+			Info("可用CDN:", fmt.Sprintf("%v", availableCDN))
+
 		}
 	}
 }
