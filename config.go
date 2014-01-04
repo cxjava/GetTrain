@@ -37,4 +37,5 @@ type system struct {
 	Cdn         []string
 	ShowCDN     bool `toml:"show_cdn"`
 	Mobile      string
+	TimeOut     int `toml:"time_out"`
 }

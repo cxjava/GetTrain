@@ -22,6 +22,7 @@ var (
 	submitChannel      = make(chan int, 1)       // 提交池
 	queryChannel       = make(chan int, 10)      // 查询池
 	availableCDN       = make(map[string]string) //可用cdn
+	timeout            = 10 * time.Second        //超时时间
 )
 
 func main() {
@@ -46,9 +47,13 @@ func main() {
 	if Config.System.QuerySize > 1 {
 		queryChannel = make(chan int, Config.System.QuerySize)
 	}
+	//设置超时时间
+	if Config.System.TimeOut > 0 {
+		timeout = time.Duration(Config.System.TimeOut) * time.Second
+	}
 	//设置CDN
 	for _, v := range Config.System.Cdn {
-		availableCDN[v] = v
+		availableCDN[v] = ""
 	}
 	Info("==========乘客信息===========")
 	Info("从", Config.OrderInfo.FromStation, "到", Config.OrderInfo.ToStation)
@@ -70,8 +75,8 @@ func main() {
 			Info("查询余票")
 			//去多个CDN查询
 			for _, date := range Config.OrderInfo.TrainDate { //轮询日期
-				for _, v := range availableCDN {
-					go Order(v, date)
+				for k, _ := range availableCDN {
+					go Order(k, date)
 				}
 			}
 
@@ -85,8 +90,6 @@ func DoForWardRequest(forwardAddress, method, requestUrl string, body io.Reader)
 	if !strings.Contains(forwardAddress, ":") {
 		forwardAddress = forwardAddress + ":80"
 	}
-
-	timeout := 10 * time.Second
 
 	conn, err := net.DialTimeout("tcp", forwardAddress, timeout)
 	if err != nil {
@@ -252,7 +255,7 @@ func Order(cdn, date string) {
 			for _, trainCode := range Config.OrderInfo.TrainCode { //要预订的车次
 				//查询到的车次
 				tkt := data.Ticket
-				if tkt.StationTrainCode == trainCode { //是预订的车次
+				if tkt.StationTrainCode == strings.ToUpper(trainCode) { //是预订的车次
 					//获取余票信息
 					ticketNum := getTicketNum(tkt.YpInfo, tkt.YpEx)
 					numOfTicket := ticketNum[Config.OrderInfo.SeatTypeName]
@@ -301,6 +304,7 @@ func queryLeftTicket(cdn, trainDate string) *QueryLeftNewDTO {
 
 	if !strings.Contains(body, "queryLeftNewDTO") {
 		Error("查询余票出错，返回:", body, "查询链接:", leftTicketUrl)
+		delete(availableCDN, cdn)
 		return nil
 	}
 
