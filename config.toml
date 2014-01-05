@@ -1,7 +1,7 @@
 # This is a TOML document. Boom.
 
 [login]
-cookie="JSESSIONID=312A96C1F7D767E35FAEC7D3C815438F; BIGipServerotn=2379481354.50210.0000; _jc_save_fromStation=%u6B66%u6C49%2CWHN; _jc_save_toStation=%u4EAC%u5C71%2CJCN; _jc_save_fromDate=2014-01-14; _jc_save_toDate=2014-01-04; _jc_save_wfdc_flag=dc"
+cookie="JSESSIONID=91CF7CE912CD311EBE40F3B34F113BB2; BIGipServerotn=1574502666.50210.0000; _jc_save_fromStation=%u4E4C%u9C81%u6728%u9F50%2CWMR; _jc_save_toStation=%u6B66%u6C49%2CWHN; _jc_save_fromDate=2014-01-20; _jc_save_toDate=2014-01-05; _jc_save_wfdc_flag=dc"
 
 user_agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36"
 
@@ -9,28 +9,26 @@ user_agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like 
 [order_info]
 #车次
 train_code=[
-"k1024",
-"k532"
+"K807",
+"K539"
 ]
 #出发时间
 train_date=[
-"2014-01-14",
+"2014-01-24",
 ]
 #起点站
-from_station="武汉"
+from_station="上饶"
 #终点站
-to_station="京山"
+to_station="溆浦"
 #乘客姓名
 passenger_name=[
- "testa",
- "testb",
-  "testc",
+ "黄春芳"
 ]
 
 # 一等座=="M" 二等座="O" 
 # 硬座=="1" 软座=="2" 硬卧=="3" 软卧=="4" 
-seat_type = "3"
-seat_type_name = "硬卧"
+seat_type = "1"
+seat_type_name = "硬座"
 
 
 [system]
@@ -55,7 +53,7 @@ mobile=""
 query_size=11
 #time_out=5
 #是否并行执行 getQueueCount()和confirmSingleForQueue()
-#go_both=true
+go_both=true
 
 #切换请修cdnXX为cdn，配置文件只会读取cdn开头的配置
 #长城宽带
