@@ -17,8 +17,8 @@ type login struct {
 type orderInfo struct {
 	TrainCode     []string `toml:"train_code"`
 	TrainDate     []string `toml:"train_date"`
-	FromStation   string   `toml:"from_station"`
-	ToStation     string   `toml:"to_station"`
+	FromStation   []string `toml:"from_station"`
+	ToStation     []string `toml:"to_station"`
 	PassengerName []string `toml:"passenger_name"`
 	SeatType      string   `toml:"seat_type"`
 	SeatTypeName  string   `toml:"seat_type_name"`

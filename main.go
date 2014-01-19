@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
@@ -71,19 +72,21 @@ func main() {
 		go getAllCDN()
 	}
 	//查询间隔时间
-	timer := time.NewTicker(time.Duration(Config.System.RefreshTime) * time.Millisecond)
+	// timer := time.NewTicker(time.Duration(Config.System.RefreshTime) * time.Millisecond)
 	for {
-		select {
-		case <-timer.C:
-			Info("查询余票")
-			//去多个CDN查询
-			for _, date := range Config.OrderInfo.TrainDate { //轮询日期
-				for k, _ := range availableCDN {
-					go Order(k, date)
-				}
-			}
+		// select {
+		// case <-timer.C:
 
+		//去多个CDN查询
+		for _, date := range Config.OrderInfo.TrainDate { //轮询日期
+			for k, _ := range availableCDN {
+				Info(k, "查询余票")
+				Order(k, date)
+				time.Sleep(time.Millisecond * time.Duration(Config.System.RefreshTime))
+			}
 		}
+
+		// }
 	}
 
 }
@@ -145,7 +148,7 @@ func getQueueCount(v url.Values, dataResult []string, cdn string) {
 	params, _ := url.QueryUnescape(v.Encode())
 	Info("getQueueCount Params:", params)
 
-	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getQueueCount", strings.NewReader(params))
+	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/getQueueCountAsync", strings.NewReader(params))
 	Info("getQueueCount body:", body)
 	if !Config.System.GoBoth {
 		//确认队列
@@ -163,20 +166,46 @@ func getQueueCount(v url.Values, dataResult []string, cdn string) {
 			time.Sleep(time.Millisecond * time.Duration(Config.System.SubmitTime))
 		}
 
-		go confirmSingleForQueue(urlValuesForQueue, cdn)
+		confirmSingleForQueue(urlValuesForQueue, cdn)
 	}
 }
 
 //再次确认队列？
 func confirmSingleForQueue(v url.Values, cdn string) {
+	//getPassCodeNew(cdn)
 	Info("confirmSingleForQueue Params:", v.Encode())
-	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/confirmSingleForQueue", strings.NewReader(v.Encode()))
+	body := DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/confirmPassenger/confirmSingle", strings.NewReader(v.Encode()))
+	Info("confirmSingleForQueue body:", body)
 	if strings.Contains(body, `"submitStatus":true`) {
-		Info("confirmSingleForQueue body:", body)
+		Info("提交订单成功 body:", body)
+	} else if strings.Contains(body, `订单未支付`) {
+		log.Println("订票成功！！")
+		sendMessage("订票成功！！")
+	} else if strings.Contains(body, `用户未登录`) {
+		log.Println("用户未登录！！")
+		sendMessage("用户未登录！！")
+	} else if strings.Contains(body, `取消次数过多`) {
+		log.Println("由于您取消次数过多！！")
+		sendMessage("由于您取消次数过多！！")
+	} else if strings.Contains(body, `互联网售票实行实名制`) {
+		log.Println("貌似你已经购买了相同的车票！！")
+		sendMessage("貌似你已经购买了相同的车票！！")
 	} else {
-		Warn("confirmSingleForQueue body:", body)
+		Warn(cdn, "订票请求警告:", body)
 	}
 
+}
+
+//获取新验证码
+func getPassCodeNew(cdn string) {
+	body := DoForWardRequest(cdn, "GET", "https://kyfw.12306.cn/otn/passcodeNew/getPassCodeNew.do?module=login&rand=sjrand&0.2866508506704122", nil)
+	Debug("body:", body)
+	urlValues := url.Values{}
+	urlValues.Add("secretStr", "xxoo")
+	urlValues.Add("rand", "sjrand")
+	urlValues.Add("_json_att", "")
+	body = DoForWardRequest(cdn, "POST", "https://kyfw.12306.cn/otn/passcodeNew/checkRandCodeAnsyn", strings.NewReader(urlValues.Encode()))
+	Info("getPassCodeNew body:", body)
 }
 
 //提交订单
@@ -215,7 +244,7 @@ func submitOrderRequest(urlValues url.Values, cdn string, t ticket) {
 			urlValues.Add("fromStationTelecode", t.FromStationTelecode)
 			urlValues.Add("toStationTelecode", t.ToStationTelecode)
 
-			go getQueueCount(urlValues, dataResult, cdn)
+			getQueueCount(urlValues, dataResult, cdn)
 
 			//是否同时进行提交表单
 			if Config.System.GoBoth {
@@ -234,7 +263,7 @@ func submitOrderRequest(urlValues url.Values, cdn string, t ticket) {
 					time.Sleep(time.Millisecond * time.Duration(Config.System.SubmitTime))
 				}
 
-				go confirmSingleForQueue(urlValuesForQueue, cdn)
+				confirmSingleForQueue(urlValuesForQueue, cdn)
 			}
 
 		}
@@ -261,23 +290,18 @@ func queryJs(cdn string) {
 	Debug("body:", body)
 }
 
-//获取新验证码
-func getPassCodeNew(cdn string) {
-	body := DoForWardRequest(cdn, "GET", "https://kyfw.12306.cn/otn/passcodeNew/getPassCodeNew.do?module=login&rand=sjrand&0.2866508506704122", nil)
-	Debug("body:", body)
-}
-
 //查询
 func Order(cdn, date string) {
 	//睡眠下，随机
 	//time.Sleep(time.Millisecond * time.Duration(Config.System.SubmitTime))
 	//time.Sleep(time.Millisecond * time.Duration(rand.Int63n(Config.System.RefreshTime)))
 
+	// defer func() {
+	// <-queryChannel
+	// }()
+	// queryChannel <- 1
+
 	// queryJs(cdn)
-	defer func() {
-		<-queryChannel
-	}()
-	queryChannel <- 1
 
 	if tickets := queryLeftTicket(cdn, date); tickets != nil { //获取车次
 		for _, trainCode := range Config.OrderInfo.TrainCode { //要预订的车次
@@ -323,8 +347,8 @@ func queryLeftTicket(cdn, trainDate string) *QueryLeftNewDTO {
 	leftTicketUrl := "https://kyfw.12306.cn/otn/leftTicket/query?"
 
 	leftTicketUrl += "leftTicketDTO.train_date=" + trainDate + "&"
-	leftTicketUrl += "leftTicketDTO.from_station=" + stationMap[Config.OrderInfo.FromStation] + "&"
-	leftTicketUrl += "leftTicketDTO.to_station=" + stationMap[Config.OrderInfo.ToStation] + "&"
+	leftTicketUrl += "leftTicketDTO.from_station=" + stationMap[Config.OrderInfo.FromStation[rand.Intn(len(Config.OrderInfo.FromStation))]] + "&"
+	leftTicketUrl += "leftTicketDTO.to_station=" + stationMap[Config.OrderInfo.ToStation[rand.Intn(len(Config.OrderInfo.ToStation))]] + "&"
 	leftTicketUrl += "purpose_codes=ADULT"
 
 	Debug("queryLeftTicket url:", leftTicketUrl)
